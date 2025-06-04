@@ -6,20 +6,21 @@
     "configurations": [
         {
             "name": "core",
-            "cwd": "core",
+            "program": "lib/main.dart",
+            "cwd": "navigator",
             "request": "launch",
             "type": "dart"
         },
         {
             "name": "core (profile mode)",
-            "cwd": "core",
+            "program": "lib/main.dart",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
             "name": "core (release mode)",
-            "cwd": "core",
+            "program": "lib/main.dart",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

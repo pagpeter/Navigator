@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My App',
-      home: const HomePage(), // This is a custom widget in another file
+      home: const HomePageAndroid(), // This is a custom widget in another file
     );
   }
 }

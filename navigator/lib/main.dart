@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navigator/pages/home_page_android.dart'; // Your UI is here
+import 'package:navigator/pages/android/home_page_android.dart'; // Your UI is here
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My App',
-      home: const HomePageAndroid(), // This is a custom widget in another file
+      home: HomePageAndroid(), // This is a custom widget in another file
     );
   }
 }

@@ -4,9 +4,11 @@ import 'package:http/http.dart' as http;
 
 class dbApiService 
 {
+  String base_url = "185.230.138.40:3000";
+
   Future<List<Station>> fetchLocations() async 
   {
-    final uri = Uri.parse('https://v6.db.transport.rest/locations').replace(queryParameters: {'poi': 'false','addresses': 'false','query': 'südkreuz',});
+    final uri = Uri.parse('$base_url/locations').replace(queryParameters: {'poi': 'false','addresses': 'false','query': 'südkreuz',});
 
     final response = await http.get(uri);
 

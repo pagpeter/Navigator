@@ -1,16 +1,64 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:navigator/pages/page_models/home_page.dart';
+import 'package:navigator/models/station.dart';
 
-class HomePageAndroid extends HomePage {
-  HomePageAndroid(this.page, this.ongoingJourney, {super.key});
+class HomePageAndroid extends StatefulWidget {
+  final HomePage page;
+  final bool ongoingJourney;
 
-  HomePage page;
-  bool ongoingJourney;
+  const HomePageAndroid(this.page, this.ongoingJourney, {Key? key})
+      : super(key: key);
 
-  bool showList = false; // Toggle state
+  @override
+  State<HomePageAndroid> createState() => _HomePageAndroidState();
+}
+
+class _HomePageAndroidState extends State<HomePageAndroid> {
+  final TextEditingController _controller = TextEditingController();
+  List<Station> _searchResults = [];
+  String _lastSearchedText = '';
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller.addListener(() {
+      _onSearchChanged(_controller.text.trim());
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(Duration(milliseconds: 500), () {
+      if (query.isNotEmpty && query != _lastSearchedText) {
+        getSearchResults(query);
+        _lastSearchedText = query;
+      }
+    });
+  }
+
+  Future<void> getSearchResults(String query) async {
+  final results = await widget.page.getLocations(query); // async method
+  setState(() {
+    _searchResults = results;
+  });
+}
+
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasResults = _searchResults.isNotEmpty;
+
     return Scaffold(
       body: Column(
         children: [
@@ -21,16 +69,16 @@ class HomePageAndroid extends HomePage {
                 duration: Duration(milliseconds: 500),
                 transitionBuilder: (child, animation) =>
                     FadeTransition(opacity: animation, child: child),
-                child: showList
+                child: hasResults
                     ? ListView.builder(
-                        key: ValueKey('listView'), // Important for switch
-                        itemCount: 15,
+                        key: ValueKey('list'),
+                        itemCount: _searchResults.length,
                         itemBuilder: (context, index) =>
-                            ListTile(title: Text('Destination ${index + 1}')),
+                            ListTile(title: Text(_searchResults[index].name)),
                       )
                     : Text(
                         'Map',
-                        key: ValueKey('mapText'), // Important for switch
+                        key: ValueKey('map'),
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
               ),
@@ -55,11 +103,7 @@ class HomePageAndroid extends HomePage {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: TextField(
-                      onTap: () {
-                        // Trigger animation
-                        showList = true;
-                        (context as Element).markNeedsBuild(); // Force rebuild
-                      },
+                      controller: _controller,
                       decoration: InputDecoration(
                         hintText: 'Where do you want to go?',
                         border: InputBorder.none,

@@ -13,7 +13,13 @@ class HomePage extends StatelessWidget
   //search Button
   bool ongoingJourney = false;
 
-  final int design = 1; //0 = Android, 1 = ios, 2 = linux, 3 = macos, 4 = web, 5 = windows
+  final int design = 0; //0 = Android, 1 = ios, 2 = linux, 3 = macos, 4 = web, 5 = windows
+  
+  void getSearchResults()
+  {
+    
+  }
+
 
 
   //bottom Bar home and saved

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navigator/pages/page_models/home_page.dart';
 
 
-class HomePageLinux extends StatelessWidget
+class HomePageLinux extends HomePage
 {
   HomePageLinux(this.page, this.ongoingJourney,{super.key});
 

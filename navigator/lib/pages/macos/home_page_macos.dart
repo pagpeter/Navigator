@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navigator/pages/page_models/home_page.dart';
 
 
-class HomePageMacos extends StatelessWidget
+class HomePageMacos extends HomePage
 {
   HomePageMacos(this.page, this.ongoingJourney,{super.key});
 

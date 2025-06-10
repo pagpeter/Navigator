@@ -32,13 +32,13 @@ dependencies:
     sdk: flutter
   http: ^1.4.0
   google_fonts: ^4.0.4
-  font_awesome_flutter: ^10.7.0
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   dynamic_color: ^1.7.0
   flutter_map: ^8.0.0
   latlong2: ^0.9.0
+  flutter_svg: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +61,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/Icon/Train_Station_Icon.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

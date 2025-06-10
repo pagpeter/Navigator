@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:navigator/pages/android/connections_page_android.dart';
+import 'package:navigator/pages/page_models/connections_page.dart';
 import 'package:navigator/pages/page_models/home_page.dart';
 import 'package:navigator/models/station.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class HomePageAndroid extends StatefulWidget {
   final HomePage page;
@@ -80,83 +82,131 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                         itemBuilder: (context, index) => Padding(
                           padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
                           child: Card(
+                            clipBehavior: Clip.hardEdge,
                             color: Theme.of(
                               context,
                             ).colorScheme.secondaryContainer,
-                            child: Padding(
-                              padding: const EdgeInsets.all(6),
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      FaIcon(FontAwesomeIcons.).,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 4.0,
-                                              left: 8.0,
-                                              right: 8.0,
-                                            ),
-                                            child: Text(
-                                              _searchResults[index].name,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.titleMedium,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8.0,
-                                              right: 8.0,
-                                              bottom: 8.0,
-                                            ),
-                                            child: Row(
-                                              spacing: 8,
-                                              children: [
-                                                if (_searchResults[index]
-                                                        .national ||
-                                                    _searchResults[index]
-                                                        .nationalExpress)
-                                                  Icon(Icons.directions_transit, color:Theme.of(context).colorScheme.onSecondaryFixed),
-                                                if (_searchResults[index]
-                                                        .regional ||
-                                                    _searchResults[index]
-                                                        .regionalExpress)
-                                                  Icon(Icons.accessibility, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index]
-                                                    .suburban)
-                                                  Icon(Icons.directions_train, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index].bus)
-                                                  Icon(Icons.directions_bus, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index].ferry)
-                                                  Icon(Icons.directions_ferry, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index]
-                                                    .subway)
-                                                  Icon(Icons.subway, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index].tram)
-                                                  Icon(Icons.tram, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                                if (_searchResults[index].taxi)
-                                                  Icon(Icons.local_taxi, color:Theme.of(context).colorScheme.secondaryFixedDim),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                            child: InkWell(
+                              splashColor: Theme.of(context).colorScheme.primary,
+                              onTap:() {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => ConnectionsPageAndroid(new ConnectionsPage(), _searchResults[index] )));
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: 
+                                          FittedBox(fit: BoxFit.contain ,child: SvgPicture.asset("assets/Icon/Train_Station_Icon.svg", colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.primary, BlendMode.srcIn)))
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Expanded(
+                                      flex:8,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 4.0,
+                                                left: 8.0,
+                                                right: 8.0,
+                                              ),
+                                              child: Text(
+                                                _searchResults[index].name,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.titleMedium,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8.0,
+                                                right: 8.0,
+                                                bottom: 8.0,
+                                              ),
+                                              child: Row(
+                                                spacing: 8,
+                                                children: [
+                                                  if (_searchResults[index]
+                                                          .national ||
+                                                      _searchResults[index]
+                                                          .nationalExpress)
+                                                  
+                                                    Icon(
+                                                      Icons.train,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (
+                                                      _searchResults[index]
+                                                          .regionalExpress)
+                                                    Icon(
+                                                      Icons.directions_railway,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if(_searchResults[index].regional)
+                                                    Icon(Icons.access_alarm),
+                                                  if (_searchResults[index]
+                                                      .suburban)
+                                                    Icon(
+                                                      Icons.directions_subway,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (_searchResults[index].bus)
+                                                    Icon(
+                                                      Icons.directions_bus,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (_searchResults[index].ferry)
+                                                    Icon(
+                                                      Icons.directions_ferry,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (_searchResults[index]
+                                                      .subway)
+                                                    Icon(
+                                                      Icons.subway,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (_searchResults[index].tram)
+                                                    Icon(
+                                                      Icons.tram,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                  if (_searchResults[index].taxi)
+                                                    Icon(
+                                                      Icons.local_taxi,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryFixedDim,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

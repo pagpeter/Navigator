@@ -79,20 +79,30 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                               padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
                               child: Card(
                                 color: Theme.of(context).colorScheme.secondaryContainer,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                                      child: Icon(Icons.train, color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    Expanded(
-                                      child: ListTile(
-                                        title: Text(_searchResults[index].name),
-                                        textColor: Theme.of(context).colorScheme.onSecondaryContainer,
-                                        ),
-                                    ),
-                                  ],
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(8, 4 , 8, 8),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.train, color: Theme.of(context).colorScheme.secondary),
+                                          Expanded(
+                                            child: ListTile(
+                                              title: Text(_searchResults[index].name),
+                                              textColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                                              ),
+                                          ),
+                                        ],
+                                      ),
+                                      Row(children: [
+                                        if(_searchResults[index].national || _searchResults[index].nationalExpress)
+                                          Icon(Icons.train),
+                                        if(_searchResults[index].regional || _searchResults[index].regionalExpress)
+                                          Icon(Icons.accessibility),
+                                      ],)
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

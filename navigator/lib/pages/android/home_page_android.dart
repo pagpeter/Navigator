@@ -153,7 +153,7 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                                                           .secondaryFixedDim,
                                                     ),
                                                   if(_searchResults[index].regional)
-                                                    Icon(Icons.access_alarm),
+                                                    Icon(Icons.access_alarm, color: Theme.of(context).colorScheme.secondaryFixedDim,),
                                                   if (_searchResults[index]
                                                       .suburban)
                                                     Icon(

@@ -5,6 +5,7 @@ import 'package:navigator/pages/page_models/home_page.dart';
 import 'package:navigator/models/station.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HomePageAndroid extends StatefulWidget {
   final HomePage page;
@@ -83,39 +84,44 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                               context,
                             ).colorScheme.secondaryContainer,
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                              padding: const EdgeInsets.all(6),
                               child: Row(
                                 children: [
-                                  Icon(
-                                    Icons.train,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      FaIcon(FontAwesomeIcons.).,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
                                   ),
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    _searchResults[index].name,
-                                                    style: Theme.of(
-                                                      context,
-                                                    ).textTheme.titleMedium,
-                                                  ),
-                                                ),
-                                              ],
+                                            padding: const EdgeInsets.only(
+                                              bottom: 4.0,
+                                              left: 8.0,
+                                              right: 8.0,
+                                            ),
+                                            child: Text(
+                                              _searchResults[index].name,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.titleMedium,
                                             ),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.all(8.0),
+                                            padding: const EdgeInsets.only(
+                                              left: 8.0,
+                                              right: 8.0,
+                                              bottom: 8.0,
+                                            ),
                                             child: Row(
                                               spacing: 8,
                                               children: [
@@ -123,26 +129,26 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                                                         .national ||
                                                     _searchResults[index]
                                                         .nationalExpress)
-                                                  Icon(Icons.train),
+                                                  Icon(Icons.directions_transit, color:Theme.of(context).colorScheme.onSecondaryFixed),
                                                 if (_searchResults[index]
                                                         .regional ||
                                                     _searchResults[index]
                                                         .regionalExpress)
-                                                  Icon(Icons.accessibility),
+                                                  Icon(Icons.accessibility, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index]
                                                     .suburban)
-                                                  Icon(Icons.sailing),
+                                                  Icon(Icons.directions_train, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index].bus)
-                                                  Icon(Icons.business),
+                                                  Icon(Icons.directions_bus, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index].ferry)
-                                                  Icon(Icons.water),
+                                                  Icon(Icons.directions_ferry, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index]
                                                     .subway)
-                                                  Icon(Icons.subway),
+                                                  Icon(Icons.subway, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index].tram)
-                                                  Icon(Icons.tram),
+                                                  Icon(Icons.tram, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                                 if (_searchResults[index].taxi)
-                                                  Icon(Icons.taxi_alert),
+                                                  Icon(Icons.local_taxi, color:Theme.of(context).colorScheme.secondaryFixedDim),
                                               ],
                                             ),
                                           ),

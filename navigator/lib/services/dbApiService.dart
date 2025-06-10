@@ -8,7 +8,7 @@ class dbApiService
 
   Future<List<Station>> fetchLocations(String query) async 
   {
-    final uri = Uri.http(base_url, '/locations', {'poi': 'false','addresses': 'false','query': 'Berlin',},);
+    final uri = Uri.http(base_url, '/locations', {'poi': 'false','addresses': 'false','query': query,},);
 
     final response = await http.get(uri);
 

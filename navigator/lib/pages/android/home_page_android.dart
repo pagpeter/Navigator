@@ -86,7 +86,7 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
           ),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.primaries.last,
+              color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -97,7 +97,7 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
               child: Center(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.primaries.first,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Padding(

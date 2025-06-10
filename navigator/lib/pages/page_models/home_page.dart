@@ -33,41 +33,22 @@ class HomePage extends StatelessWidget
     switch(design)
     {
       case 1:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageIos(this, ongoingJourney), // This is a custom widget in another file
-    );
+      return HomePageIos(this, ongoingJourney);
 
       case 2:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageLinux(this, ongoingJourney), // This is a custom widget in another file
-    );
+      return HomePageLinux(this, ongoingJourney);
 
       case 3:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageMacos(this, ongoingJourney), // This is a custom widget in another file
-    );
+      return HomePageMacos(this, ongoingJourney);
 
       case 4:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageWeb(this, ongoingJourney), // This is a custom widget in another file
-    );
+      return HomePageWeb(this, ongoingJourney);
 
       case 5:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageWindows(this, ongoingJourney), // This is a custom widget in another file
-    );
-
+      return HomePageWindows(this,ongoingJourney);
 
       default:
-      return MaterialApp(
-      title: 'Navigator',
-      home: HomePageAndroid(this, ongoingJourney), // This is a custom widget in another file
-    );
+      return HomePageAndroid(this, ongoingJourney);
     }
     
   }

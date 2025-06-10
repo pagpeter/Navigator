@@ -19,11 +19,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamicColorBuilder( builder: (lightColorScheme, darkColorScheme){
+    return DynamicColorBuilder(builder: (ColorScheme? lightColorScheme,ColorScheme? darkColorScheme){
       return MaterialApp(
         title: 'Navigator',
         home: HomePage(), // This is a custom widget in another file...
         theme: ThemeData(
+          useMaterial3: true,
           colorScheme: lightColorScheme ?? _defaultLightColorScheme,
           brightness: Brightness.light,
           textTheme: TextTheme(

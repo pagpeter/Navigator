@@ -60,6 +60,7 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
     final hasResults = _searchResults.isNotEmpty;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       body: Column(
         children: [
           Expanded(
@@ -74,7 +75,27 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
                         key: ValueKey('list'),
                         itemCount: _searchResults.length,
                         itemBuilder: (context, index) =>
-                            ListTile(title: Text(_searchResults[index].name)),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                              child: Card(
+                                color: Theme.of(context).colorScheme.secondaryContainer,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                                      child: Icon(Icons.train, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                    Expanded(
+                                      child: ListTile(
+                                        title: Text(_searchResults[index].name),
+                                        textColor: Theme.of(context).colorScheme.onSecondaryContainer,
+                                        ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                       )
                     : Text(
                         'Map',

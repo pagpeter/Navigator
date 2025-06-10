@@ -33,12 +33,16 @@ class MyApp extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
         // ···
-        titleLarge: GoogleFonts.oswald(
+        titleLarge: GoogleFonts.roboto(
           fontSize: 30,
           fontStyle: FontStyle.italic,
         ),
-        bodyMedium: GoogleFonts.merriweather(),
-        displaySmall: GoogleFonts.pacifico(),
+        titleMedium: GoogleFonts.roboto(
+          fontSize: 18,
+          
+        ),
+        bodyMedium: GoogleFonts.roboto(),
+        displaySmall: GoogleFonts.roboto(),
       ),
         ),
         

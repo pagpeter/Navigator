@@ -61,289 +61,235 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final hasResults = _searchResults.isNotEmpty;
+@override
+Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final colors = theme.colorScheme;
+  final hasResults = _searchResults.isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      body: Column(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: Duration(milliseconds: 500),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: hasResults
-                    ? ListView.builder(
-                        key: ValueKey('list'),
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          final result = _searchResults[index];
-                          if (result is Station) {
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-                              child: _stationResult(context, result as Station),
-                            );
-                          }
-                          else
-                          {
-                            return _LocationResult(context, result);
-                          }
-                          ;
-                        },
-                      )
-                    : FlutterMap(
-                        options: MapOptions(
-                          initialCenter: LatLng(52.513416, 13.412364),
-                          initialZoom: 9.2,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.example.app',
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: 'Where do you want to go?',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
+  return Scaffold(
+    backgroundColor: colors.surface,
+    // 1) Main content: map or results
+    body: SafeArea(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        transitionBuilder: (child, anim) =>
+            FadeTransition(opacity: anim, child: child),
+        child: hasResults
+            ? ListView.builder(
+                key: const ValueKey('list'),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                itemCount: _searchResults.length,
+                itemBuilder: (context, i) {
+                  final r = _searchResults[i];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: r is Station
+                        ? _stationResult(context, r)
+                        : _locationResult(context, r),
+                  );
+                },
+              )
+            : FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(52.513416, 13.412364),
+                  initialZoom: 9.2,
                 ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.app',
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
       ),
-      bottomNavigationBar: NavigationBar(
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
-        ],
-      ),
-    );
-  }
+    ),
 
-  Widget _stationResult(BuildContext context, Station station) {
-    return Card(
-      clipBehavior: Clip.hardEdge,
-      color: Theme.of(context).colorScheme.secondaryContainer,
-      child: InkWell(
-        splashColor: Theme.of(context).colorScheme.primary,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  ConnectionsPageAndroid(new ConnectionsPage(), station),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: SvgPicture.asset(
-                      "assets/Icon/Train_Station_Icon.svg",
-                      colorFilter: ColorFilter.mode(
-                        Theme.of(context).colorScheme.primary,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 8,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 4.0,
-                          left: 8.0,
-                          right: 8.0,
-                        ),
-                        child: Text(
-                          station.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: 8.0,
-                          right: 8.0,
-                          bottom: 8.0,
-                        ),
-                        child: Row(
-                          spacing: 8,
-                          children: [
-                            if (station.national || station.nationalExpress)
-                              Icon(
-                                Icons.train,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.regionalExpress)
-                              Icon(
-                                Icons.directions_railway,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.regional)
-                              Icon(
-                                Icons.access_alarm,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.suburban)
-                              Icon(
-                                Icons.directions_subway,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.bus)
-                              Icon(
-                                Icons.directions_bus,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.ferry)
-                              Icon(
-                                Icons.directions_ferry,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.subway)
-                              Icon(
-                                Icons.subway,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.tram)
-                              Icon(
-                                Icons.tram,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                            if (station.taxi)
-                              Icon(
-                                Icons.local_taxi,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.secondaryFixedDim,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+    // 2) Persistent M3 bottom sheet with SearchBar
+    bottomSheet: Material(
+  color: colors.surfaceContainerHighest,
+  elevation: 8,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: TextField(
+      controller: _controller,
+      onChanged: _onSearchChanged,
+      style: TextStyle(color: colors.onPrimaryContainer),
+      decoration: InputDecoration(
+        hintText: 'Where do you want to go?',
+        prefixIcon: Icon(Icons.location_pin, color: colors.primary),
+        filled: true,
+        fillColor: colors.primaryContainer,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 12
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
       ),
-    );
-  }
+    ),
+  ),
+),
+
+    // 3) NavigationBar remains unchanged
+    bottomNavigationBar: NavigationBar(
+      destinations: [
+        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
+      ],
+    ),
+  );
 }
 
-Widget _LocationResult(BuildContext context, Location location) {
-    return Card(
-      clipBehavior: Clip.hardEdge,
-      color: Theme.of(context).colorScheme.secondaryContainer,
-      child: InkWell(
-        splashColor: Theme.of(context).colorScheme.primary,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  ConnectionsPageAndroid(new ConnectionsPage(), location),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: Icon(Icons.house, color: Theme.of(context).colorScheme.primary,)
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 8,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 4.0,
-                          left: 8.0,
-                          right: 8.0,
-                        ),
-                        child: Text(
-                          location.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-            ])
-                  
-                ),
-              ),
-            ],
+
+Widget _stationResult(BuildContext context, Station station) {
+  final theme = Theme.of(context);
+  final colors = theme.colorScheme;
+
+  return Card(
+    clipBehavior: Clip.hardEdge,
+    color: colors.surfaceVariant,
+    elevation: 1,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ConnectionsPageAndroid(ConnectionsPage(), station),
           ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Tonal avatar for the station icon
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: colors.tertiaryContainer,
+              child: SvgPicture.asset(
+                "assets/Icon/Train_Station_Icon.svg",
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  colors.onTertiaryContainer,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Station name + service icons
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    station.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      if (station.national || station.nationalExpress)
+                        Icon(Icons.train, size: 20, color: colors.tertiary),
+                      if (station.regionalExpress)
+                        Icon(Icons.directions_railway, size: 20, color: colors.tertiary),
+                      if (station.regional)
+                        Icon(Icons.directions_transit, size: 20, color: colors.tertiary),
+                      if (station.suburban)
+                        Icon(Icons.directions_subway, size: 20, color: colors.tertiary),
+                      if (station.bus)
+                        Icon(Icons.directions_bus, size: 20, color: colors.tertiary),
+                      if (station.ferry)
+                        Icon(Icons.directions_ferry, size: 20, color: colors.tertiary),
+                      if (station.subway)
+                        Icon(Icons.subway, size: 20, color: colors.tertiary),
+                      if (station.tram)
+                        Icon(Icons.tram, size: 20, color: colors.tertiary),
+                      if (station.taxi)
+                        Icon(Icons.local_taxi, size: 20, color: colors.tertiary),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Trailing chevron
+            Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+Widget _locationResult(BuildContext context, Location location) {
+  final theme = Theme.of(context);
+  final colors = theme.colorScheme;
+
+  return Card(
+    clipBehavior: Clip.hardEdge,
+    color: colors.surfaceVariant,
+    elevation: 1,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ConnectionsPageAndroid(ConnectionsPage(), location),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Tonal avatar for the “home” icon
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: colors.tertiaryContainer,
+              child: Icon(
+                Icons.house,
+                size: 24,
+                color: colors.onTertiaryContainer,
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Location name
+            Expanded(
+              child: Text(
+                location.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ),
+
+            // Chevron affordance
+            Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+}

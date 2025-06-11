@@ -19,9 +19,9 @@ class dbApiService {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       print(jsonEncode(data)); // Pretty print or handle as needed
       return (data as List)
-    .where((item) => item['id'] != null && item['id'].toString().toLowerCase() != 'null')
+    .where((item) => (item['id'] != null && item['id'].toString().toLowerCase() != 'null') || !(item['type'] != 'station' && item['latitude'] != null && item['longitude'] != null))
     .map<Location>((item) {
-      if (item['type'] == 'station') {
+      if (item['type'] == 'station' || item['type'] == 'stop') {
         return Station.fromJson(item);
       } else {
         return Location.fromJson(item);

@@ -29,51 +29,55 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            //Search Options
-            DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(20)),
-                color: Theme.of(context).colorScheme.primaryFixedDim,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        _buildInputField(
-                          context,
-                          Icons.radio_button_checked,
-                          "Von",
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInputField(context, Icons.location_on, "Nach"),
-                      ],
-                    ),
-                    Positioned(
-                      right: 0,
-                      top:
-                          34, // Adjust this to center the button between the fields
-                      child: FloatingActionButton.small(
-                        onPressed: () {
-                          // Switch action here
-                        },
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        child: const Icon(Icons.swap_vert),
-                        shape: const CircleBorder(),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              //Search Options
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(20)),
+                  color: Theme.of(context).colorScheme.primary.withAlpha(100),
+                 // border: Border.all(color: Theme.of(context).colorScheme.secondary, width: 2)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          _buildInputField(
+                            context,
+                            Icons.radio_button_checked,
+                            "Von",
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(context, Icons.location_on, "Nach"),
+                        ],
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        right: 0,
+                        top:
+                            34, // Adjust this to center the button between the fields
+                        child: FloatingActionButton.small(
+                          onPressed: () {
+                            // Switch action here
+                          },
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          child: const Icon(Icons.swap_vert),
+                          shape: const CircleBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            Text(widget.to.name),
-          ],
+        
+              Text(widget.to.name),
+            ],
+          ),
         ),
       ),
 

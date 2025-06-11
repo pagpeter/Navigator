@@ -56,6 +56,7 @@ Widget build(BuildContext context) {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          spacing: 16,
           children: [
             // ——— M3 expressive “card” for inputs ———
             Card(
@@ -138,16 +139,12 @@ Widget build(BuildContext context) {
                   }, 
                   )
                   ),
+                IconButton.outlined(onPressed: () => {}, icon: Icon(Icons.refresh)),
                 IconButton.filledTonal(onPressed: () => {}, icon: Icon(Icons.settings)),
               ],
             ),
 
-            const SizedBox(height: 24),
-            Text(
-              widget.to.name,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(color: colors.onSurface),
-            ),
+            Expanded(child: _buildJourneys(context)),
           ],
         ),
       ),
@@ -157,6 +154,127 @@ Widget build(BuildContext context) {
         NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
       ],
+    ),
+  );
+}
+
+Widget _buildJourneys(BuildContext context)
+{
+  TextTheme textTheme = Theme.of(context).textTheme;
+  ColorScheme colorScheme = Theme.of(context).colorScheme;
+  return Card.filled(
+    color: colorScheme.tertiaryContainer.withAlpha(120),
+    child:
+    Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+      child: ListView.builder(
+                    key: const ValueKey('list'),
+                    itemCount: 8,
+                    itemBuilder: (context, i) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          //spacing: 8,
+                          children: [
+      
+                            Card(
+                              color: colorScheme.tertiaryContainer,
+        child: InkWell(
+          onTap: () => {},
+          child: Padding(
+                padding: const EdgeInsets.all(8),
+                // IntrinsicHeight makes the Row take on the tallest child's height,
+                // and with crossAxisAlignment.stretch each child will fill that height.
+                child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1) The image fills the full height (minus padding), flexed
+              Flexible(
+                flex: 2, // adjust this to give the image more or less width
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    "assets/Images/image.png",
+                    fit: BoxFit.cover,  // covers the full height
+                  ),
+                ),
+              ),
+                
+              const SizedBox(width: 16),
+                
+              // 2) The text + divider in a flexed column
+              Flexible(
+                flex: 3, // gives this side more room than the image
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // your two info columns side by side
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('In 20 minutes', style: textTheme.titleMedium),
+                            Text('Departure 14:02', style: textTheme.bodyMedium),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Text('45', style: textTheme.titleMedium),
+                            Text('minutes', style: textTheme.bodyMedium),
+                          ],
+                        ),
+                      ],
+                    ),
+                
+                    // divider only under the text area
+                    const Divider(
+                      thickness: 5,
+                      color: Colors.red,
+                      // no indent/endIndent so it spans full text width
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+                ),
+          ),
+        ),
+      ),
+      
+                              //Divider(indent: 8, endIndent: 8, color: colorScheme.onPrimaryContainer,)
+      
+                            // Card(
+                            //   color: colorScheme.primaryContainer,
+                            //   child: Padding(
+                            //     padding: const EdgeInsets.all(8.0),
+                            //     child: Column(children: [
+                            //       Row(
+                            //         mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            //         children: [
+                            //         Column(children: [
+                            //           Text('In 15 minutes', style: textTheme.bodyLarge),
+                            //           Text('Dep 23:25', style: textTheme.bodySmall)
+                            //         ],),
+                            //         Column(children: [
+                            //           Text('1h35m', style: textTheme.bodyLarge,),
+                            //           Text('Arr: 1:00', style: textTheme.bodySmall)
+                            //         ],)
+                            //       ],),
+                            //       //Replace this divider with mode representation as line
+                            //       Divider(thickness: 5, indent: 40, endIndent: 40, color: colorScheme.onSecondaryContainer)
+                            //     ],),
+                            //   )
+                            // ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
     ),
   );
 }

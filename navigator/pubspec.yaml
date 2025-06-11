@@ -64,6 +64,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/Icon/Train_Station_Icon.svg
+    - assets/Images/image.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

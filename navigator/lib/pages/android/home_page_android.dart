@@ -66,30 +66,44 @@ Widget build(BuildContext context) {
   final theme = Theme.of(context);
   final colors = theme.colorScheme;
   final hasResults = _searchResults.isNotEmpty;
+  const bottomSheetHeight = 96.0;
 
-  return Scaffold(
-    backgroundColor: colors.surface,
-    // 1) Main content: map or results
-    body: SafeArea(
-      child: AnimatedSwitcher(
+  return WillPopScope(
+    onWillPop: () async {
+      if (hasResults) {
+        // clear the search and go back to the map
+        setState(() {
+          _searchResults.clear();
+          _lastSearchedText = '';
+          _controller.clear();
+        });
+        return false; // prevent actual pop
+      }
+      return true; // allow actual back navigation if no results
+    },
+    child: Scaffold(
+      backgroundColor: colors.surfaceVariant,
+      body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
         transitionBuilder: (child, anim) =>
             FadeTransition(opacity: anim, child: child),
         child: hasResults
-            ? ListView.builder(
-                key: const ValueKey('list'),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                itemCount: _searchResults.length,
-                itemBuilder: (context, i) {
-                  final r = _searchResults[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: r is Station
-                        ? _stationResult(context, r)
-                        : _locationResult(context, r),
-                  );
-                },
-              )
+            ? SafeArea(
+              child: ListView.builder(
+                  key: const ValueKey('list'),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, bottomSheetHeight + 16),
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, i) {
+                    final r = _searchResults[i];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: r is Station
+                          ? _stationResult(context, r)
+                          : _locationResult(context, r),
+                    );
+                  },
+                ),
+            )
             : FlutterMap(
                 options: MapOptions(
                   initialCenter: LatLng(52.513416, 13.412364),
@@ -103,44 +117,41 @@ Widget build(BuildContext context) {
                 ],
               ),
       ),
-    ),
-
-    // 2) Persistent M3 bottom sheet with SearchBar
-    bottomSheet: Material(
-  color: colors.surfaceContainerHighest,
-  elevation: 8,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-  ),
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: TextField(
-      controller: _controller,
-      onChanged: _onSearchChanged,
-      style: TextStyle(color: colors.onPrimaryContainer),
-      decoration: InputDecoration(
-        hintText: 'Where do you want to go?',
-        prefixIcon: Icon(Icons.location_pin, color: colors.primary),
-        filled: true,
-        fillColor: colors.primaryContainer,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 12
+      bottomSheet: Material(
+        color: colors.surfaceContainerHighest,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _controller,
+            onChanged: _onSearchChanged,
+            style: TextStyle(color: colors.onPrimaryContainer),
+            decoration: InputDecoration(
+              hintText: 'Where do you want to go?',
+              prefixIcon: Icon(Icons.location_pin, color: colors.primary),
+              filled: true,
+              fillColor: colors.primaryContainer,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-),
-
-    // 3) NavigationBar remains unchanged
-    bottomNavigationBar: NavigationBar(
-      destinations: [
-        NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
-      ],
+      bottomNavigationBar: NavigationBar(
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
+        ],
+      ),
     ),
   );
 }
@@ -152,7 +163,7 @@ Widget _stationResult(BuildContext context, Station station) {
 
   return Card(
     clipBehavior: Clip.hardEdge,
-    color: colors.surfaceVariant,
+    color: colors.surfaceContainerHighest,
     elevation: 1,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
@@ -242,7 +253,7 @@ Widget _locationResult(BuildContext context, Location location) {
 
   return Card(
     clipBehavior: Clip.hardEdge,
-    color: colors.surfaceVariant,
+    color: colors.surfaceContainerHighest,
     elevation: 1,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),

@@ -3,6 +3,8 @@ import 'package:navigator/models/location.dart';
 import 'package:navigator/models/station.dart';
 import 'package:navigator/pages/page_models/connections_page.dart';
 import 'package:navigator/pages/page_models/home_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:navigator/services/geoLocator.dart';
 
 class ConnectionsPageAndroid extends StatefulWidget {
   ConnectionsPageAndroid(this.page, this.to, {super.key});
@@ -21,10 +23,20 @@ class ConnectionsPageAndroid extends StatefulWidget {
 class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   late final TextEditingController _toController;
   late final TextEditingController _fromController;
+  late final GeoService geoService;
+  late TimeOfDay _selectedTime;
+  late DateTime _selectedDate;
+  Position? _selectedPosition;
+
+
   void initState() {
     super.initState();
     _toController = TextEditingController(text: widget.to.name);
     _fromController = TextEditingController();
+    _selectedTime = TimeOfDay.now();
+    _selectedDate = DateTime.now();
+    geoService = GeoService();
+    _getCurrentLocation();
   }
 
   void dispose() {
@@ -57,12 +69,13 @@ Widget build(BuildContext context) {
                 child: Stack(
                   children: [
                     Column(
-                      children: [
+                      children: 
+                      [
                         _buildInputField(
                           context,
                           Icons.radio_button_checked,
-                          "From",
-                          _fromController,
+                          'From',
+                          _updateControllerWithLocation(_fromController),
                         ),
                         const SizedBox(height: 16),
                         _buildInputField(
@@ -86,6 +99,47 @@ Widget build(BuildContext context) {
                   ],
                 ),
               ),
+            ),
+
+            //Quick Options
+            Row
+            (
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: Icon(Icons.departure_board),
+                    label: Text(_selectedTime.format(context)),
+                     onPressed: () async {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: _selectedTime ?? TimeOfDay.now(),
+                      helpText: 'Select departure time',
+                    );
+                    if (time != null) {
+                      setState(() {
+                        _selectedTime = time;
+                      });
+                    }
+                  },
+                ),
+              ),
+                Expanded(child: OutlinedButton.icon(
+                  icon: Icon(Icons.calendar_month),
+                  label: Text(_selectedDate.day.toString() + '.' + _selectedDate.month.toString() + '.' + _selectedDate.year.toString()),
+                  onPressed: ()  async {
+                    final date = await showDatePicker(context: context, firstDate: DateTime(2000), lastDate: DateTime(2100), initialDate: _selectedDate ?? DateTime.now(), helpText: 'Select Departure Text');
+                    if(date != null)
+                    {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    }
+                  }, 
+                  )
+                  ),
+                IconButton.filledTonal(onPressed: () => {}, icon: Icon(Icons.settings)),
+              ],
             ),
 
             const SizedBox(height: 24),
@@ -140,6 +194,30 @@ Widget _buildInputField(
   String temp = _toController.text;          
   _toController.text = _fromController.text; 
   _fromController.text = temp;               
+}
+
+Future<void> _getCurrentLocation() async
+{
+  try
+  {
+    final pos = await geoService.determinePosition();
+    setState(() {
+      _selectedPosition = pos;
+    });
+  }
+  catch(err)
+  {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not get Location. Error code: $err')));
+  }
+}
+
+TextEditingController _updateControllerWithLocation(TextEditingController c)
+{
+  if(_selectedPosition != null)
+  {
+    c.text = 'Current Position';
+  }
+  return c;
 }
 
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:navigator/models/location.dart';
 import 'package:navigator/pages/android/home_page_android.dart';
 import 'package:navigator/pages/ios/home_page_ios.dart';
 import 'package:navigator/pages/linux/home_page_linux.dart';
@@ -19,7 +20,7 @@ class HomePage extends StatelessWidget
 
   final int design = 0; //0 = Android, 1 = ios, 2 = linux, 3 = macos, 4 = web, 5 = windows
   
-  Future<List<Station>> getLocations(String query) async
+  Future<List<Location>> getLocations(String query) async
   {
     return await service.getLocations(query);
   }

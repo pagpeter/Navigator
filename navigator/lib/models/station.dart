@@ -1,9 +1,6 @@
-class Station {
-  final String id;
-  final String name;
-  final double latitude;
-  final double longitude;
+import 'package:navigator/models/location.dart';
 
+class Station extends Location{
   final bool nationalExpress;
   final bool national;
   final bool regional;
@@ -16,10 +13,11 @@ class Station {
   final bool taxi;
 
   Station({
-    required this.id,
-    required this.name,
-    required this.latitude,
-    required this.longitude,
+    required super.type,
+    required super.id,
+    required super.name,
+    required super.latitude,
+    required super.longitude,
     required this.nationalExpress,
     required this.national,
     required this.regional,
@@ -34,6 +32,7 @@ class Station {
 
   factory Station.fromJson(Map<String, dynamic> json) {
     return Station(
+      type: json['type'],
       id: json['id'],
       name: json['name'],
       latitude: json['location']['latitude'],

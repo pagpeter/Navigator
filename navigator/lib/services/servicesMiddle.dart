@@ -1,3 +1,4 @@
+import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/services/dbApiService.dart';
 import 'package:navigator/models/station.dart';
 import 'package:navigator/models/journey.dart';
@@ -13,9 +14,10 @@ class ServicesMiddle
     return results;
   }
 
-  // Future<List<Journey>> getJourneys(Location from, Location to)
-  // {
-  //   return Future<List<Journey>>(() => ,;
-  // }
+  Future<List<Journey>> getJourneys(Location from, Location to, DateAndTime when, bool departure) async
+  {
+    final results = await dbRest.fetchJourneysByLocation(from, to, when, departure);
+    return results;
+  }
 
 }

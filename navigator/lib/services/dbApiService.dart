@@ -4,9 +4,11 @@ import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/location.dart';
 import 'package:navigator/models/station.dart';
 import 'package:http/http.dart' as http;
+import 'package:navigator/env/env.dart';
+
 
 class dbApiService {
-  String base_url = "185.230.138.40:3000";
+  final base_url = Env.api_url;
 
   // Future<List<Journey>> fetchJourneys(int fromId, int toId, DateAndTime when, bool departure) async
   // {

@@ -43,7 +43,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     geoService = GeoService();
     _getCurrentLocation();
     bool hasJourneys = _currentJourneys.isNotEmpty;
-
   }
 
   void dispose() {
@@ -180,120 +179,119 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildJourneys(BuildContext context) {
-    if(!hasJourneys)
-    {
+    if (!hasJourneys) {
       //loading indicator
       return CircularProgressIndicator();
-    }
-    else{
-    TextTheme textTheme = Theme.of(context).textTheme;
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return Card.filled(
-      color: colorScheme.tertiaryContainer.withAlpha(120),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-        child: ListView.builder(
-          key: const ValueKey('list'),
-          itemCount: 8,
-          itemBuilder: (context, i) {
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                //spacing: 8,
-                children: [
-                  Card(
-                    color: colorScheme.tertiaryContainer,
-                    child: InkWell(
-                      onTap: () => {},
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        // IntrinsicHeight makes the Row take on the tallest child's height,
-                        // and with crossAxisAlignment.stretch each child will fill that height.
-                        child: IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // 1) The image fills the full height (minus padding), flexed
-                              Flexible(
-                                flex:
-                                    2, // adjust this to give the image more or less width
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.asset(
-                                    "assets/Images/image.png",
-                                    fit: BoxFit.cover, // covers the full height
+    } else {
+      TextTheme textTheme = Theme.of(context).textTheme;
+      ColorScheme colorScheme = Theme.of(context).colorScheme;
+      return Card.filled(
+        color: colorScheme.tertiaryContainer.withAlpha(120),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+          child: ListView.builder(
+            key: const ValueKey('list'),
+            itemCount: 8,
+            itemBuilder: (context, i) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  //spacing: 8,
+                  children: [
+                    Card(
+                      color: colorScheme.tertiaryContainer,
+                      child: InkWell(
+                        onTap: () => {},
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          // IntrinsicHeight makes the Row take on the tallest child's height,
+                          // and with crossAxisAlignment.stretch each child will fill that height.
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // 1) The image fills the full height (minus padding), flexed
+                                Flexible(
+                                  flex:
+                                      2, // adjust this to give the image more or less width
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.asset(
+                                      "assets/Images/image.png",
+                                      fit: BoxFit
+                                          .cover, // covers the full height
+                                    ),
                                   ),
                                 ),
-                              ),
 
-                              const SizedBox(width: 16),
+                                const SizedBox(width: 16),
 
-                              // 2) The text + divider in a flexed column
-                              Flexible(
-                                flex:
-                                    3, // gives this side more room than the image
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    // your two info columns side by side
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'In 20 minutes',
-                                              style: textTheme.titleMedium,
-                                            ),
-                                            Text(
-                                              'Departure 14:02',
-                                              style: textTheme.bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              '45',
-                                              style: textTheme.titleMedium,
-                                            ),
-                                            Text(
-                                              'minutes',
-                                              style: textTheme.bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                // 2) The text + divider in a flexed column
+                                Flexible(
+                                  flex:
+                                      3, // gives this side more room than the image
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // your two info columns side by side
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'In 20 minutes',
+                                                style: textTheme.titleMedium,
+                                              ),
+                                              Text(
+                                                'Departure 14:02',
+                                                style: textTheme.bodyMedium,
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            children: [
+                                              Text(
+                                                '45',
+                                                style: textTheme.titleMedium,
+                                              ),
+                                              Text(
+                                                'minutes',
+                                                style: textTheme.bodyMedium,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
 
-                                    // divider only under the text area
-                                    const Divider(
-                                      thickness: 5,
-                                      color: Colors.red,
-                                      // no indent/endIndent so it spans full text width
-                                    ),
-                                  ],
+                                      // divider only under the text area
+                                      const Divider(
+                                        thickness: 5,
+                                        color: Colors.red,
+                                        // no indent/endIndent so it spans full text width
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
     }
   }
 
@@ -363,29 +361,47 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     DateAndTime when,
     bool departure,
   ) async {
-
     Location from;
     Location to;
 
-    if(fromId == null)
-    {
-      from = Location(id: "0", latitude: fromLat, longitude: fromLon, name: "", type: "");
-    }
-    else
-    {
-      from = Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "");
+    if (fromId == null) {
+      from = Location(
+        id: "0",
+        latitude: fromLat,
+        longitude: fromLon,
+        name: "",
+        type: "",
+      );
+    } else {
+      from = Location(
+        id: fromId,
+        latitude: 0,
+        longitude: 0,
+        name: "",
+        type: "",
+      );
     }
 
-    if(toId == null)
-    {
-      to = Location(id: "0", latitude: toLat, longitude: toLong, name: "", type: "");
-    }
-    else
-    {
+    if (toId == null) {
+      to = Location(
+        id: "0",
+        latitude: toLat,
+        longitude: toLong,
+        name: "",
+        type: "",
+      );
+    } else {
       to = Location(id: toId, latitude: 0, longitude: 0, name: "", type: "");
     }
 
-    
-    _currentJourneys = await widget.services.getJourneys(from, to, when, departure);
+    _currentJourneys = await widget.services.getJourneys(
+      from,
+      to,
+      when,
+      departure,
+    );
+    setState(() {
+      hasJourneys = _currentJourneys.isNotEmpty;
+    });
   }
 }

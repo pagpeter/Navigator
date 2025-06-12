@@ -32,6 +32,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   late DateTime _selectedDate;
   Position? _selectedPosition;
   List<Journey> _currentJourneys = [];
+  bool hasJourneys = false;
 
   void initState() {
     super.initState();
@@ -41,6 +42,8 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     _selectedDate = DateTime.now();
     geoService = GeoService();
     _getCurrentLocation();
+    bool hasJourneys = _currentJourneys.isNotEmpty;
+
   }
 
   void dispose() {
@@ -161,7 +164,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   ),
                 ],
               ),
-
+              // Jorneys
               Expanded(child: _buildJourneys(context)),
             ],
           ),
@@ -177,6 +180,12 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildJourneys(BuildContext context) {
+    if(!hasJourneys)
+    {
+      //loading indicator
+      return CircularProgressIndicator();
+    }
+    else{
     TextTheme textTheme = Theme.of(context).textTheme;
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Card.filled(
@@ -285,6 +294,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         ),
       ),
     );
+    }
   }
 
   Widget _buildInputField(
@@ -363,7 +373,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     }
     else
     {
-      from = Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "")
+      from = Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "");
     }
 
     if(toId == null)
@@ -372,7 +382,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     }
     else
     {
-      to = Location(id: toId, latitude: 0, longitude: 0, name: "", type: "")
+      to = Location(id: toId, latitude: 0, longitude: 0, name: "", type: "");
     }
 
     

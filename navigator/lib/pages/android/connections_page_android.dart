@@ -154,7 +154,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     ),
                   ),
                   IconButton.outlined(
-                    onPressed: () => {},
+                    onPressed: _fetchJourneysFromCurrentLocation,
                     icon: Icon(Icons.refresh),
                   ),
                   IconButton.filledTonal(
@@ -337,12 +337,14 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       setState(() {
         _selectedPosition = pos;
       });
+      await _fetchJourneysFromCurrentLocation(); // <-- auto-fetch after location
     } catch (err) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get Location. Error code: $err')),
+        SnackBar(content: Text('Could not get Location. Error: $err')),
       );
     }
   }
+
 
   TextEditingController _updateControllerWithLocation(TextEditingController c) {
     if (_selectedPosition != null) {
@@ -352,56 +354,68 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Future<void> getJourneys(
-    String fromId,
-    String toId,
-    double fromLat,
-    double fromLon,
-    double toLat,
-    double toLong,
-    DateAndTime when,
-    bool departure,
-  ) async {
-    Location from;
-    Location to;
+      String fromId,
+      String toId,
+      double fromLat,
+      double fromLon,
+      double toLat,
+      double toLong,
+      DateAndTime when,
+      bool departure,
+      ) async {
+    final from = fromId.isEmpty
+        ? Location(
+      id: "0",
+      latitude: fromLat,
+      longitude: fromLon,
+      name: "Current Location",
+      type: "geo",
+    )
+        : Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "");
 
-    if (fromId == null) {
-      from = Location(
-        id: "0",
-        latitude: fromLat,
-        longitude: fromLon,
-        name: "",
-        type: "",
-      );
-    } else {
-      from = Location(
-        id: fromId,
-        latitude: 0,
-        longitude: 0,
-        name: "",
-        type: "",
-      );
-    }
-
-    if (toId == null) {
-      to = Location(
-        id: "0",
-        latitude: toLat,
-        longitude: toLong,
-        name: "",
-        type: "",
-      );
-    } else {
-      to = Location(id: toId, latitude: 0, longitude: 0, name: "", type: "");
-    }
-
-    _currentJourneys = await widget.services.getJourneys(
-      from,
-      to,
-      when,
-      departure,
+    final to = Location(
+      id: toId,
+      latitude: toLat,
+      longitude: toLong,
+      name: widget.to.name,
+      type: widget.to.type,
     );
+
+    final journeys = await widget.services.getJourneys(from, to, when, departure);
+
     setState(() {
-      hasJourneys = _currentJourneys.isNotEmpty;
+      _currentJourneys = journeys;
+      hasJourneys = journeys.isNotEmpty;
     });
   }
+
+  Future<void> _fetchJourneysFromCurrentLocation() async {
+    if (_selectedPosition == null) return;
+
+    final now = DateTime.now();
+    final tzOffset = now.timeZoneOffset;
+
+    final when = DateAndTime(
+      day: _selectedDate.day,
+      month: _selectedDate.month,
+      year: _selectedDate.year,
+      hour: _selectedTime.hour,
+      minute: _selectedTime.minute,
+      timeZoneHourShift: tzOffset.inHours,
+      timeZoneMinuteShift: tzOffset.inMinutes % 60,
+    );
+
+    await getJourneys(
+      '', // fromId empty = use coordinates
+      widget.to.id,
+      _selectedPosition!.latitude,
+      _selectedPosition!.longitude,
+      widget.to.latitude,
+      widget.to.longitude,
+      when,
+      true,
+    );
+  }
+
+
 }

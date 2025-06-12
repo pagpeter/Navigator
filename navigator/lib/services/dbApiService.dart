@@ -1,10 +1,53 @@
 import 'dart:convert';
+import 'package:navigator/models/dateAndTime.dart';
+import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/location.dart';
 import 'package:navigator/models/station.dart';
 import 'package:http/http.dart' as http;
 
 class dbApiService {
   String base_url = "185.230.138.40:3000";
+
+  // Future<List<Journey>> fetchJourneys(int fromId, int toId, DateAndTime when, bool departure) async
+  // {
+  //   final uri;
+  //   if(departure)
+  //   {
+  //     uri = Uri.http(base_url, '/journeys', {
+  //     'from': fromId,
+  //     'to': toId,
+  //     'departure': when.ISO8601String()
+  //     }
+  //     );
+  //   }
+  //   else
+  //   {
+  //     uri = Uri.http(base_url, '/journeys',
+  //     {
+  //       'from': fromId,
+  //       'to': toId,
+  //       'arrival': when.ISO8601String()
+  //     });
+  //   }
+
+  //   final response = await http.get(uri);
+
+  //   if(response.statusCode == 200)
+  //   {
+  //     final data = jsonDecode(utf8.decode(response.bodyBytes));
+  //     print(jsonEncode(data));
+
+  //     return (data as List)
+  //     .map<Journey>((item)
+  //     {
+
+  //     })
+  //   }
+
+
+      
+    
+  // }
 
   Future<List<Location>> fetchLocations(String query) async {
     final uri = Uri.http(base_url, '/locations', {

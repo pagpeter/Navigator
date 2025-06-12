@@ -3,7 +3,8 @@
 DB-Navigator like App with a better UI and open-source.
 
 ## Setup
-To use the App you need a working Instance of [db-rest](https://github.com/derhuerst/db-rest)
+To use the App you need a working Instance of [db-rest](https://github.com/derhuerst/db-rest)  
+
 In The root of /navigator create a .env File with your API Base URL
 ```
 #navigator/.env

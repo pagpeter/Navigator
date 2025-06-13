@@ -228,13 +228,12 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                           },
                         ),
                       ),
-                      IconButton.outlined(
-                        onPressed: _fetchJourneysFromCurrentLocation,
-                        icon: Icon(Icons.refresh),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: () => {},
-                        icon: Icon(Icons.settings),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton.filledTonal(
+                          onPressed: () => {},
+                          icon: Icon(Icons.settings),
+                        ),
                       ),
                     ],
                   ),
@@ -258,7 +257,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                           },
                         ),
                       ),
-                      Expanded(flex: 1, child: OutlinedButton.icon(onPressed: _fetchJourneysFromCurrentLocation, label: Text('Search'), icon: Icon(Icons.search)))
+                      Expanded(flex: 1, child: FilledButton.tonalIcon(onPressed: _fetchJourneysFromCurrentLocation, label: Text('Search'), icon: Icon(Icons.search)))
                   ],)
                 ],
               ),

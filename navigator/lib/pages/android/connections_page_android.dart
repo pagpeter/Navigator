@@ -241,20 +241,24 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   Row(
                     spacing: 8,
                     children: [
-                      SegmentedButton<bool>
-                      (
-                        segments: const <ButtonSegment<bool>>[
-                          ButtonSegment<bool>(value: true, label: Text('Departure')),
-                          ButtonSegment<bool>(value: false, label: Text('Arrival'))
-                        ],
-                        selected: {departure},
-                        onSelectionChanged: (Set<bool> newSelection)
-                        {
-                          setState(() {
-                            departure = newSelection.first;
-                          });
-                        },
-                      )
+                      Expanded(
+                        flex: 3,
+                        child: SegmentedButton<bool>
+                        (
+                          segments: const <ButtonSegment<bool>>[
+                            ButtonSegment<bool>(value: true, label: Text('Departure')),
+                            ButtonSegment<bool>(value: false, label: Text('Arrival'))
+                          ],
+                          selected: {departure},
+                          onSelectionChanged: (Set<bool> newSelection)
+                          {
+                            setState(() {
+                              departure = newSelection.first;
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(flex: 1, child: OutlinedButton.icon(onPressed: _fetchJourneysFromCurrentLocation, label: Text('Search'), icon: Icon(Icons.search)))
                   ],)
                 ],
               ),

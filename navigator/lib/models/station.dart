@@ -30,6 +30,11 @@ class Station extends Location{
     required this.taxi
   });
 
+  factory Station.empty()
+  {
+    return Station(bus: false, ferry: false, id: '', latitude: 0, longitude: 0, name: '', national: false, nationalExpress: false, regional: false, regionalExpress: false, suburban: false, subway: false, taxi: false, tram: false, type: '');
+  }
+
   factory Station.fromJson(Map<String, dynamic> json) {
     return Station(
       type: json['type'],

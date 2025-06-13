@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/models/location.dart';
@@ -8,6 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:navigator/services/geoLocator.dart';
 import 'package:navigator/services/servicesMiddle.dart';
 import 'package:navigator/models/journey.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ConnectionsPageAndroid extends StatefulWidget {
   ConnectionsPageAndroid(this.page, this.to, {super.key});
@@ -15,11 +18,6 @@ class ConnectionsPageAndroid extends StatefulWidget {
   ConnectionsPage page;
   Location to;
   ServicesMiddle services = ServicesMiddle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(to.name);
-  }
 
   State<ConnectionsPageAndroid> createState() => _ConnectionsPageAndroidState();
 }
@@ -33,20 +31,93 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   Position? _selectedPosition;
   List<Journey> _currentJourneys = [];
   bool hasJourneys = false;
+  List<Location> _searchResultsFrom = [];
+  List<Location> _searchResultsTo = [];
+  String _lastSearchedText = '';
+  Timer? _debounce;
+  late FocusNode _fromFocusNode;
+  late FocusNode _toFocusNode;
+  bool departure = true;
 
   void initState() {
     super.initState();
+
+    _fromFocusNode = FocusNode();
+  _toFocusNode = FocusNode();
+
+  _fromFocusNode.addListener(() {
+    if (!_fromFocusNode.hasFocus) {
+      // Clear "from" search results when focus is lost
+      setState(() {
+        _searchResultsFrom.clear();
+      });
+    }
+  });
+
+  _toFocusNode.addListener(() {
+    if (!_toFocusNode.hasFocus) {
+      // Clear "to" search results when focus is lost
+      setState(() {
+        _searchResultsTo.clear();
+      });
+    }
+  });
+
     _toController = TextEditingController(text: widget.to.name);
     _fromController = TextEditingController();
     _selectedTime = TimeOfDay.now();
     _selectedDate = DateTime.now();
     geoService = GeoService();
     _getCurrentLocation();
-    bool hasJourneys = _currentJourneys.isNotEmpty;
+    hasJourneys = _currentJourneys.isNotEmpty;
+    _toController.addListener(() {
+      _onSearchChanged(_toController.text.trim(), false);
+    });
+    _fromController.addListener(() {
+      _onSearchChanged(_fromController.text.trim(), true);
+    });
   }
 
   void dispose() {
     super.dispose();
+    _fromFocusNode.dispose();
+    _toFocusNode.dispose();
+  _toController.dispose();
+  _fromController.dispose();
+  _debounce?.cancel();
+  super.dispose();
+  }
+
+  void _onSearchChanged(String query, bool from) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(Duration(milliseconds: 500), () {
+      if (query.isNotEmpty && query != _lastSearchedText) {
+        getSearchResults(query, from);
+        _lastSearchedText = query;
+      }
+    });
+  }
+
+  Future<void> getSearchResults(String query, bool from) async {
+    final results = await getLocations(query); // async method
+    if(from)
+    {
+      setState(() {
+      _searchResultsFrom = results;
+    });
+    }
+    else
+    {
+      setState(() {
+      _searchResultsTo = results;
+    });
+    }
+    
+  }
+
+  Future<List<Location>> getLocations(String query) async {
+    return await widget.services.getLocations(query);
   }
 
   @override
@@ -80,6 +151,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                             Icons.radio_button_checked,
                             'From',
                             _updateControllerWithLocation(_fromController),
+                            _fromFocusNode
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
@@ -87,6 +159,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                             Icons.location_on,
                             "To",
                             _toController,
+                            _toFocusNode
                           ),
                         ],
                       ),
@@ -106,64 +179,91 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               ),
 
               //Quick Options
-              Row(
-                spacing: 8,
+              Column(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: Icon(Icons.departure_board),
-                      label: Text(_selectedTime.format(context)),
-                      onPressed: () async {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: _selectedTime ?? TimeOfDay.now(),
-                          helpText: 'Select departure time',
-                        );
-                        if (time != null) {
-                          setState(() {
-                            _selectedTime = time;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: Icon(Icons.calendar_month),
-                      label: Text(
-                        _selectedDate.day.toString() +
-                            '.' +
-                            _selectedDate.month.toString() +
-                            '.' +
-                            _selectedDate.year.toString(),
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: Icon(Icons.departure_board),
+                          label: Text(_selectedTime.format(context)),
+                          onPressed: () async {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: _selectedTime ?? TimeOfDay.now(),
+                              helpText: 'Select departure time',
+                            );
+                            if (time != null) {
+                              setState(() {
+                                _selectedTime = time;
+                              });
+                            }
+                          },
+                        ),
                       ),
-                      onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          initialDate: _selectedDate ?? DateTime.now(),
-                          helpText: 'Select Departure Text',
-                        );
-                        if (date != null) {
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: Icon(Icons.calendar_month),
+                          label: Text(
+                            _selectedDate.day.toString() +
+                                '.' +
+                                _selectedDate.month.toString() +
+                                '.' +
+                                _selectedDate.year.toString(),
+                          ),
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                              initialDate: _selectedDate ?? DateTime.now(),
+                              helpText: 'Select Departure Text',
+                            );
+                            if (date != null) {
+                              setState(() {
+                                _selectedDate = date;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      IconButton.outlined(
+                        onPressed: _fetchJourneysFromCurrentLocation,
+                        icon: Icon(Icons.refresh),
+                      ),
+                      IconButton.filledTonal(
+                        onPressed: () => {},
+                        icon: Icon(Icons.settings),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    spacing: 8,
+                    children: [
+                      SegmentedButton<bool>
+                      (
+                        segments: const <ButtonSegment<bool>>[
+                          ButtonSegment<bool>(value: true, label: Text('Departure')),
+                          ButtonSegment<bool>(value: false, label: Text('Arrival'))
+                        ],
+                        selected: {departure},
+                        onSelectionChanged: (Set<bool> newSelection)
+                        {
                           setState(() {
-                            _selectedDate = date;
+                            departure = newSelection.first;
                           });
-                        }
-                      },
-                    ),
-                  ),
-                  IconButton.outlined(
-                    onPressed: _fetchJourneysFromCurrentLocation,
-                    icon: Icon(Icons.refresh),
-                  ),
-                  IconButton.filledTonal(
-                    onPressed: () => {},
-                    icon: Icon(Icons.settings),
-                  ),
+                        },
+                      )
+                  ],)
                 ],
               ),
               // Jorneys
+              if(_searchResultsFrom.isNotEmpty)
+              Expanded(child: _buildSearchScreen(_fromController, true)),
+              if(_searchResultsTo.isNotEmpty)
+              Expanded(child: _buildSearchScreen(_toController, false)),
+              if(_searchResultsFrom.isEmpty && _searchResultsTo.isEmpty)
               Expanded(child: _buildJourneys(context)),
             ],
           ),
@@ -191,7 +291,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
           child: ListView.builder(
             key: const ValueKey('list'),
-            itemCount: 8,
+            itemCount: _currentJourneys.length,
             itemBuilder: (context, i) {
               return Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -296,34 +396,34 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildInputField(
-    BuildContext context,
-    IconData icon,
-    String hintText,
-    TextEditingController controller,
-  ) {
-    final colors = Theme.of(context).colorScheme;
-    return TextField(
-      controller: controller,
-      onChanged: (_) {}, // keep your debounce logic upstream
-      style: TextStyle(color: colors.onSurface),
-      cursorColor: colors.primary,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(color: colors.onSurfaceVariant),
-        prefixIcon: Icon(icon, color: colors.primary),
-        filled: true,
-        fillColor: colors.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.circular(16),
-        ),
+  BuildContext context,
+  IconData icon,
+  String hintText,
+  TextEditingController controller,
+  [FocusNode? focusNode]
+) {
+  final colors = Theme.of(context).colorScheme;
+  return TextField(
+    controller: controller,
+    focusNode: focusNode,
+    onChanged: (_) {}, // your debounce logic upstream
+    style: TextStyle(color: colors.onSurface),
+    cursorColor: colors.primary,
+    decoration: InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(color: colors.onSurfaceVariant),
+      prefixIcon: Icon(icon, color: colors.primary),
+      filled: true,
+      fillColor: colors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   void swap() {
     String temp = _toController.text;
@@ -345,32 +445,31 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     }
   }
 
-
   TextEditingController _updateControllerWithLocation(TextEditingController c) {
     if (_selectedPosition != null) {
-      c.text = 'Current Position';
+      c.text = _selectedPosition!.latitude.toString();
     }
     return c;
   }
 
   Future<void> getJourneys(
-      String fromId,
-      String toId,
-      double fromLat,
-      double fromLon,
-      double toLat,
-      double toLong,
-      DateAndTime when,
-      bool departure,
-      ) async {
+    String fromId,
+    String toId,
+    double fromLat,
+    double fromLon,
+    double toLat,
+    double toLong,
+    DateAndTime when,
+    bool departure,
+  ) async {
     final from = fromId.isEmpty
         ? Location(
-      id: "0",
-      latitude: fromLat,
-      longitude: fromLon,
-      name: "Current Location",
-      type: "geo",
-    )
+            id: "0",
+            latitude: fromLat,
+            longitude: fromLon,
+            name: "Current Location",
+            type: "geo",
+          )
         : Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "");
 
     final to = Location(
@@ -381,7 +480,12 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       type: widget.to.type,
     );
 
-    final journeys = await widget.services.getJourneys(from, to, when, departure);
+    final journeys = await widget.services.getJourneys(
+      from,
+      to,
+      when,
+      departure,
+    );
 
     setState(() {
       _currentJourneys = journeys;
@@ -408,8 +512,10 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     await getJourneys(
       '', // fromId empty = use coordinates
       widget.to.id,
-      _selectedPosition!.latitude,
-      _selectedPosition!.longitude,
+      //selectedPosition!.latitude
+      54.374348,
+      9.101344,
+      //_selectedPosition!.longitude,
       widget.to.latitude,
       widget.to.longitude,
       when,
@@ -417,5 +523,211 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     );
   }
 
+  Widget _buildSearchScreen(TextEditingController t, bool from) {
+    if(from)
+    {
+      return SafeArea(
+      child: ListView.builder(
+        key: const ValueKey('list'),
+        padding: const EdgeInsets.all(8),
+        itemCount: _searchResultsFrom.length,
+        itemBuilder: (context, i) {
+          final r = _searchResultsFrom[i];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: r is Station
+                ? _stationResult(context, r)
+                : _locationResult(context, r),
+          );
+        },
+      ),
+    );
+    }
+    else
+    {
+      return SafeArea(
+      child: ListView.builder(
+        key: const ValueKey('list'),
+        padding: const EdgeInsets.all(8),
+        itemCount: _searchResultsTo.length,
+        itemBuilder: (context, i) {
+          final r = _searchResultsTo[i];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: r is Station
+                ? _stationResult(context, r)
+                : _locationResult(context, r),
+          );
+        },
+      ),
+    );
+    }
+    
+  }
 
+  Widget _stationResult(BuildContext context, Station station) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      color: colors.surfaceContainerHighest,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ConnectionsPageAndroid(ConnectionsPage(), station),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Tonal avatar for the station icon
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: colors.tertiaryContainer,
+                child: SvgPicture.asset(
+                  "assets/Icon/Train_Station_Icon.svg",
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    colors.onTertiaryContainer,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Station name + service icons
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      station.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (station.national || station.nationalExpress)
+                          Icon(Icons.train, size: 20, color: colors.tertiary),
+                        if (station.regionalExpress)
+                          Icon(
+                            Icons.directions_railway,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.regional)
+                          Icon(
+                            Icons.directions_transit,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.suburban)
+                          Icon(
+                            Icons.directions_subway,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.bus)
+                          Icon(
+                            Icons.directions_bus,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.ferry)
+                          Icon(
+                            Icons.directions_ferry,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.subway)
+                          Icon(Icons.subway, size: 20, color: colors.tertiary),
+                        if (station.tram)
+                          Icon(Icons.tram, size: 20, color: colors.tertiary),
+                        if (station.taxi)
+                          Icon(
+                            Icons.local_taxi,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Trailing chevron
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _locationResult(BuildContext context, Location location) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      color: colors.surfaceContainerHighest,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ConnectionsPageAndroid(ConnectionsPage(), location),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Tonal avatar for the “home” icon
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: colors.tertiaryContainer,
+                child: Icon(
+                  Icons.house,
+                  size: 24,
+                  color: colors.onTertiaryContainer,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Location name
+              Expanded(
+                child: Text(
+                  location.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              // Chevron affordance
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

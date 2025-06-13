@@ -6,6 +6,7 @@ class Location {
   final String name;
   final double latitude;
   final double longitude;
+  String? address;
 
   Location({
     required this.type,
@@ -13,6 +14,7 @@ class Location {
     required this.name,
     required this.latitude,
     required this.longitude,
+    this.address
   });
 
   factory Location.fromJson(Map<String, dynamic> json) {

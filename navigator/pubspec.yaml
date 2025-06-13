@@ -41,7 +41,8 @@ dependencies:
   flutter_svg: ^2.0.0
   geolocator: ^14.0.1
   envied: ^1.1.1
-  geocoding: ^2.1.0
+  geocoding: ^4.0.0
+  convert: ^3.1.2
 
 
 

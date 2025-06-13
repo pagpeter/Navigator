@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/models/location.dart';
@@ -11,14 +10,15 @@ import 'package:navigator/services/geoLocator.dart';
 import 'package:navigator/services/servicesMiddle.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 
 class ConnectionsPageAndroid extends StatefulWidget {
-  ConnectionsPageAndroid(this.page, this.to, {super.key});
+  final ConnectionsPage page;
+  final Location to;
 
-  ConnectionsPage page;
-  Location to;
-  ServicesMiddle services = ServicesMiddle();
+  const ConnectionsPageAndroid(this.page, this.to, {super.key});
 
+  @override
   State<ConnectionsPageAndroid> createState() => _ConnectionsPageAndroidState();
 }
 
@@ -26,6 +26,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   late final TextEditingController _toController;
   late final TextEditingController _fromController;
   late final GeoService geoService;
+  late final ServicesMiddle services;
   late TimeOfDay _selectedTime;
   late DateTime _selectedDate;
   Position? _selectedPosition;
@@ -39,37 +40,40 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   late FocusNode _toFocusNode;
   bool departure = true;
 
+  @override
   void initState() {
     super.initState();
 
     _fromFocusNode = FocusNode();
-  _toFocusNode = FocusNode();
+    _toFocusNode = FocusNode();
 
-  _fromFocusNode.addListener(() {
-    if (!_fromFocusNode.hasFocus) {
-      // Clear "from" search results when focus is lost
-      setState(() {
-        _searchResultsFrom.clear();
-      });
-    }
-  });
+    _fromFocusNode.addListener(() {
+      if (!_fromFocusNode.hasFocus) {
+        // Clear "from" search results when focus is lost
+        setState(() {
+          _searchResultsFrom.clear();
+        });
+      }
+    });
 
-  _toFocusNode.addListener(() {
-    if (!_toFocusNode.hasFocus) {
-      // Clear "to" search results when focus is lost
-      setState(() {
-        _searchResultsTo.clear();
-      });
-    }
-  });
+    _toFocusNode.addListener(() {
+      if (!_toFocusNode.hasFocus) {
+        // Clear "to" search results when focus is lost
+        setState(() {
+          _searchResultsTo.clear();
+        });
+      }
+    });
 
     _toController = TextEditingController(text: widget.to.name);
     _fromController = TextEditingController();
     _selectedTime = TimeOfDay.now();
     _selectedDate = DateTime.now();
     geoService = GeoService();
+    services = ServicesMiddle();
     _getCurrentLocation();
     hasJourneys = _currentJourneys.isNotEmpty;
+
     _toController.addListener(() {
       _onSearchChanged(_toController.text.trim(), false);
     });
@@ -78,20 +82,20 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     });
   }
 
+  @override
   void dispose() {
-    super.dispose();
     _fromFocusNode.dispose();
     _toFocusNode.dispose();
-  _toController.dispose();
-  _fromController.dispose();
-  _debounce?.cancel();
-  super.dispose();
+    _toController.dispose();
+    _fromController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   void _onSearchChanged(String query, bool from) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    _debounce = Timer(Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       if (query.isNotEmpty && query != _lastSearchedText) {
         getSearchResults(query, from);
         _lastSearchedText = query;
@@ -100,24 +104,20 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Future<void> getSearchResults(String query, bool from) async {
-    final results = await getLocations(query); // async method
-    if(from)
-    {
+    final results = await getLocations(query);
+    if (from) {
       setState(() {
-      _searchResultsFrom = results;
-    });
-    }
-    else
-    {
+        _searchResultsFrom = results;
+      });
+    } else {
       setState(() {
-      _searchResultsTo = results;
-    });
+        _searchResultsTo = results;
+      });
     }
-    
   }
 
   Future<List<Location>> getLocations(String query) async {
-    return await widget.services.getLocations(query);
+    return await services.getLocations(query);
   }
 
   @override
@@ -131,9 +131,8 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            spacing: 16,
             children: [
-              // ——— M3 expressive “card” for inputs ———
+              // Input card
               Card(
                 color: colors.surfaceVariant,
                 elevation: 1,
@@ -150,8 +149,8 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                             context,
                             Icons.radio_button_checked,
                             'From',
-                            _updateControllerWithLocation(_fromController),
-                            _fromFocusNode
+                            _fromController,
+                            _fromFocusNode,
                           ),
                           const SizedBox(height: 16),
                           _buildInputField(
@@ -159,15 +158,13 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                             Icons.location_on,
                             "To",
                             _toController,
-                            _toFocusNode
+                            _toFocusNode,
                           ),
                         ],
                       ),
-
-                      // M3 small FAB, no overrides—theme provides size, shape & color
                       Positioned(
                         right: 0,
-                        top: 32, // centers between the two 56dp-high fields
+                        top: 32,
                         child: FloatingActionButton.small(
                           onPressed: swap,
                           child: const Icon(Icons.swap_vert),
@@ -178,20 +175,21 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
               //Quick Options
               Column(
                 children: [
                   Row(
-                    spacing: 8,
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          icon: Icon(Icons.departure_board),
+                          icon: const Icon(Icons.departure_board),
                           label: Text(_selectedTime.format(context)),
                           onPressed: () async {
                             final time = await showTimePicker(
                               context: context,
-                              initialTime: _selectedTime ?? TimeOfDay.now(),
+                              initialTime: _selectedTime,
                               helpText: 'Select departure time',
                             );
                             if (time != null) {
@@ -202,23 +200,20 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                           },
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
-                          icon: Icon(Icons.calendar_month),
+                          icon: const Icon(Icons.calendar_month),
                           label: Text(
-                            _selectedDate.day.toString() +
-                                '.' +
-                                _selectedDate.month.toString() +
-                                '.' +
-                                _selectedDate.year.toString(),
+                            '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
                           ),
                           onPressed: () async {
                             final date = await showDatePicker(
                               context: context,
                               firstDate: DateTime(2000),
                               lastDate: DateTime(2100),
-                              initialDate: _selectedDate ?? DateTime.now(),
-                              helpText: 'Select Departure Text',
+                              initialDate: _selectedDate,
+                              helpText: 'Select Departure Date',
                             );
                             if (date != null) {
                               setState(() {
@@ -228,46 +223,59 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                           },
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton.filledTonal(
                           onPressed: () => {},
-                          icon: Icon(Icons.settings),
+                          icon: const Icon(Icons.settings),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
                   Row(
-                    spacing: 8,
                     children: [
                       Expanded(
                         flex: 3,
-                        child: SegmentedButton<bool>
-                        (
+                        child: SegmentedButton<bool>(
                           segments: const <ButtonSegment<bool>>[
-                            ButtonSegment<bool>(value: true, label: Text('Departure')),
-                            ButtonSegment<bool>(value: false, label: Text('Arrival'))
+                            ButtonSegment<bool>(
+                                value: true, label: Text('Departure')),
+                            ButtonSegment<bool>(
+                                value: false, label: Text('Arrival'))
                           ],
                           selected: {departure},
-                          onSelectionChanged: (Set<bool> newSelection)
-                          {
+                          onSelectionChanged: (Set<bool> newSelection) {
                             setState(() {
                               departure = newSelection.first;
                             });
                           },
                         ),
                       ),
-                      Expanded(flex: 1, child: FilledButton.tonalIcon(onPressed: _fetchJourneysFromCurrentLocation, label: Text('Search'), icon: Icon(Icons.search)))
-                  ],)
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton.tonalIcon(
+                          onPressed: _fetchJourneysFromCurrentLocation,
+                          label: const Text('Search'),
+                          icon: const Icon(Icons.search),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-              // Jorneys
-              if(_searchResultsFrom.isNotEmpty)
-              Expanded(child: _buildSearchScreen(_fromController, true)),
-              if(_searchResultsTo.isNotEmpty)
-              Expanded(child: _buildSearchScreen(_toController, false)),
-              if(_searchResultsFrom.isEmpty && _searchResultsTo.isEmpty)
-              Expanded(child: _buildJourneys(context)),
+
+              const SizedBox(height: 16),
+
+              // Content area
+              if (_searchResultsFrom.isNotEmpty)
+                Expanded(child: _buildSearchScreen(_fromController, true))
+              else if (_searchResultsTo.isNotEmpty)
+                Expanded(child: _buildSearchScreen(_toController, false))
+              else
+                Expanded(child: _buildJourneys(context)),
             ],
           ),
         ),
@@ -283,8 +291,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
 
   Widget _buildJourneys(BuildContext context) {
     if (!hasJourneys) {
-      //loading indicator
-      return CircularProgressIndicator();
+      return const Center(child: CircularProgressIndicator());
     } else {
       TextTheme textTheme = Theme.of(context).textTheme;
       ColorScheme colorScheme = Theme.of(context).colorScheme;
@@ -298,97 +305,78 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
             itemBuilder: (context, i) {
               return Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  //spacing: 8,
-                  children: [
-                    Card(
-                      color: colorScheme.tertiaryContainer,
-                      child: InkWell(
-                        onTap: () => {},
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          // IntrinsicHeight makes the Row take on the tallest child's height,
-                          // and with crossAxisAlignment.stretch each child will fill that height.
-                          child: IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // 1) The image fills the full height (minus padding), flexed
-                                Flexible(
-                                  flex:
-                                      2, // adjust this to give the image more or less width
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.asset(
-                                      "assets/Images/image.png",
-                                      fit: BoxFit
-                                          .cover, // covers the full height
-                                    ),
-                                  ),
+                child: Card(
+                  color: colorScheme.tertiaryContainer,
+                  child: InkWell(
+                    onTap: () => {},
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Flexible(
+                              flex: 2,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.asset(
+                                  "assets/Images/image.png",
+                                  fit: BoxFit.cover,
                                 ),
-
-                                const SizedBox(width: 16),
-
-                                // 2) The text + divider in a flexed column
-                                Flexible(
-                                  flex:
-                                      3, // gives this side more room than the image
-                                  child: Column(
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Flexible(
+                              flex: 3,
+                              child: Column(
+                                mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
                                     mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
+                                    MainAxisAlignment.spaceBetween,
                                     children: [
-                                      // your two info columns side by side
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                      Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                         children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'In 20 minutes',
-                                                style: textTheme.titleMedium,
-                                              ),
-                                              Text(
-                                                'Departure 14:02',
-                                                style: textTheme.bodyMedium,
-                                              ),
-                                            ],
+                                          Text(
+                                            'In 20 minutes',
+                                            style: textTheme.titleMedium,
                                           ),
-                                          Column(
-                                            children: [
-                                              Text(
-                                                '45',
-                                                style: textTheme.titleMedium,
-                                              ),
-                                              Text(
-                                                'minutes',
-                                                style: textTheme.bodyMedium,
-                                              ),
-                                            ],
+                                          Text(
+                                            'Departure 14:02',
+                                            style: textTheme.bodyMedium,
                                           ),
                                         ],
                                       ),
-
-                                      // divider only under the text area
-                                      const Divider(
-                                        thickness: 5,
-                                        color: Colors.red,
-                                        // no indent/endIndent so it spans full text width
+                                      Column(
+                                        children: [
+                                          Text(
+                                            '45',
+                                            style: textTheme.titleMedium,
+                                          ),
+                                          Text(
+                                            'minutes',
+                                            style: textTheme.bodyMedium,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
+                                  const Divider(
+                                    thickness: 5,
+                                    color: Colors.red,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
             },
@@ -399,34 +387,34 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildInputField(
-  BuildContext context,
-  IconData icon,
-  String hintText,
-  TextEditingController controller,
-  [FocusNode? focusNode]
-) {
-  final colors = Theme.of(context).colorScheme;
-  return TextField(
-    controller: controller,
-    focusNode: focusNode,
-    onChanged: (_) {}, // your debounce logic upstream
-    style: TextStyle(color: colors.onSurface),
-    cursorColor: colors.primary,
-    decoration: InputDecoration(
-      hintText: hintText,
-      hintStyle: TextStyle(color: colors.onSurfaceVariant),
-      prefixIcon: Icon(icon, color: colors.primary),
-      filled: true,
-      fillColor: colors.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderSide: BorderSide.none,
-        borderRadius: BorderRadius.circular(16),
+      BuildContext context,
+      IconData icon,
+      String hintText,
+      TextEditingController controller, [
+        FocusNode? focusNode,
+      ]) {
+    final colors = Theme.of(context).colorScheme;
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      onChanged: (_) {},
+      style: TextStyle(color: colors.onSurface),
+      cursorColor: colors.primary,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: colors.onSurfaceVariant),
+        prefixIcon: Icon(icon, color: colors.primary),
+        filled: true,
+        fillColor: colors.surface,
+        contentPadding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   void swap() {
     String temp = _toController.text;
@@ -440,50 +428,140 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       setState(() {
         _selectedPosition = pos;
       });
-      await _fetchJourneysFromCurrentLocation(); // <-- auto-fetch after location
+
+      // Update the from controller with the current location address
+      await _updateControllerWithLocation();
+
+      await _fetchJourneysFromCurrentLocation();
     } catch (err) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get Location. Error: $err')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not get Location. Error: $err')),
+        );
+      }
     }
   }
 
-  TextEditingController _updateControllerWithLocation(TextEditingController c) {
+  Future<void> _updateControllerWithLocation() async {
     if (_selectedPosition != null) {
-      c.text = _selectedPosition!.latitude.toString();
+      try {
+        final placemarks = await geo.placemarkFromCoordinates(
+            _selectedPosition!.latitude,
+            _selectedPosition!.longitude
+        );
+
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final city = placemark.locality ?? '';
+          final street = placemark.street ?? '';
+          final address = _buildAddressString(city, street);
+
+          _fromController.text = address.isNotEmpty ? address : 'Current Location';
+        } else {
+          _fromController.text = 'Current Location';
+        }
+      } catch (e) {
+        print('Failed to get address for current location: $e');
+        _fromController.text = 'Current Location';
+      }
     }
-    return c;
+  }
+
+  String _buildAddressString(String city, String street) {
+    final safeCity = city.trim();
+    final safeStreet = street.trim();
+
+    if (safeCity.isNotEmpty && safeStreet.isNotEmpty) {
+      return '$safeCity, $safeStreet';
+    } else if (safeCity.isNotEmpty) {
+      return safeCity;
+    } else if (safeStreet.isNotEmpty) {
+      return safeStreet;
+    } else {
+      return '';
+    }
   }
 
   Future<void> getJourneys(
-    String fromId,
-    String toId,
-    double fromLat,
-    double fromLon,
-    double toLat,
-    double toLong,
-    DateAndTime when,
-    bool departure,
-  ) async {
+      String fromId,
+      String toId,
+      double fromLat,
+      double fromLon,
+      double toLat,
+      double toLong,
+      DateAndTime when,
+      bool departure,
+      ) async {
+    String? fromAddress;
+    if (fromId.isEmpty) {
+      try {
+        final placemarks = await geo.placemarkFromCoordinates(fromLat, fromLon);
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final city = placemark.locality ?? '';
+          final street = placemark.street ?? '';
+          fromAddress = _buildAddressString(city, street);
+        }
+      } catch (e) {
+        print('Failed to get address for from coordinates: $e');
+        fromAddress = null;
+      }
+    }
+
+    String? toAddress;
+    if (toId.isEmpty) {
+      try {
+        final placemarks = await geo.placemarkFromCoordinates(toLat, toLong);
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final city = placemark.locality ?? '';
+          final street = placemark.street ?? '';
+          toAddress = _buildAddressString(city, street);
+        }
+      } catch (e) {
+        print('Failed to get address for to coordinates: $e');
+        toAddress = null;
+      }
+    }
+
+    // Rest of the method remains the same...
     final from = fromId.isEmpty
         ? Location(
-            id: "0",
-            latitude: fromLat,
-            longitude: fromLon,
-            name: "Current Location",
-            type: "geo",
-          )
-        : Location(id: fromId, latitude: 0, longitude: 0, name: "", type: "");
+      id: '',
+      latitude: fromLat,
+      longitude: fromLon,
+      name: "Current Location",
+      type: "geo",
+      address: fromAddress,
+    )
+        : Location(
+      id: fromId,
+      latitude: 0,
+      longitude: 0,
+      name: "",
+      type: "",
+      address: null,
+    );
 
-    final to = Location(
+    final to = toId.isEmpty
+        ? Location(
+      id: '',
+      latitude: toLat,
+      longitude: toLong,
+      name: widget.to.name,
+      type: widget.to.type,
+      address: toAddress,
+    )
+        : Location(
       id: toId,
       latitude: toLat,
       longitude: toLong,
       name: widget.to.name,
       type: widget.to.type,
+      address: null,
     );
 
-    final journeys = await widget.services.getJourneys(
+    final journeys = await services.getJourneys(
       from,
       to,
       when,
@@ -512,30 +590,62 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       timeZoneMinuteShift: tzOffset.inMinutes % 60,
     );
 
-    await getJourneys(
-      '', // fromId empty = use coordinates
-      widget.to.id,
-      //selectedPosition!.latitude
-      54.374348,
-      9.101344,
-      //_selectedPosition!.longitude,
-      widget.to.latitude,
-      widget.to.longitude,
-      when,
-      true,
+    String? fromAddress;
+    try {
+      final placemarks = await geo.placemarkFromCoordinates(
+          _selectedPosition!.latitude, _selectedPosition!.longitude);
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        final city = placemark.locality ?? '';
+        final street = placemark.street ?? '';
+        fromAddress = _buildAddressString(city, street);
+      }
+    } catch (e) {
+      print('Failed to get address for current location: $e');
+      fromAddress = null;
+    }
+
+    final from = Location(
+      id: '',
+      latitude: _selectedPosition!.latitude,
+      longitude: _selectedPosition!.longitude,
+      name: 'Current Location',
+      type: 'geo',
+      address: fromAddress,
     );
+
+    final to = Location(
+      id: widget.to.id,
+      latitude: widget.to.latitude,
+      longitude: widget.to.longitude,
+      name: widget.to.name,
+      type: widget.to.type,
+      address: null,
+    );
+
+    final journeys = await services.getJourneys(
+      from,
+      to,
+      when,
+      departure,
+    );
+
+    setState(() {
+      _currentJourneys = journeys;
+      hasJourneys = journeys.isNotEmpty;
+    });
   }
 
   Widget _buildSearchScreen(TextEditingController t, bool from) {
-    if(from)
-    {
-      return SafeArea(
+    final searchResults = from ? _searchResultsFrom : _searchResultsTo;
+
+    return SafeArea(
       child: ListView.builder(
         key: const ValueKey('list'),
         padding: const EdgeInsets.all(8),
-        itemCount: _searchResultsFrom.length,
+        itemCount: searchResults.length,
         itemBuilder: (context, i) {
-          final r = _searchResultsFrom[i];
+          final r = searchResults[i];
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: r is Station
@@ -545,27 +655,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         },
       ),
     );
-    }
-    else
-    {
-      return SafeArea(
-      child: ListView.builder(
-        key: const ValueKey('list'),
-        padding: const EdgeInsets.all(8),
-        itemCount: _searchResultsTo.length,
-        itemBuilder: (context, i) {
-          final r = _searchResultsTo[i];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: r is Station
-                ? _stationResult(context, r)
-                : _locationResult(context, r),
-          );
-        },
-      ),
-    );
-    }
-    
   }
 
   Widget _stationResult(BuildContext context, Station station) {
@@ -582,8 +671,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  ConnectionsPageAndroid(ConnectionsPage(), station),
+              builder: (_) => ConnectionsPageAndroid(ConnectionsPage(), station),
             ),
           );
         },
@@ -591,7 +679,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Tonal avatar for the station icon
               CircleAvatar(
                 radius: 20,
                 backgroundColor: colors.tertiaryContainer,
@@ -606,8 +693,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 ),
               ),
               const SizedBox(width: 16),
-
-              // Station name + service icons
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,8 +755,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   ],
                 ),
               ),
-
-              // Trailing chevron
               Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
             ],
           ),
@@ -694,8 +777,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  ConnectionsPageAndroid(ConnectionsPage(), location),
+              builder: (_) => ConnectionsPageAndroid(ConnectionsPage(), location),
             ),
           );
         },
@@ -703,7 +785,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Tonal avatar for the “home” icon
               CircleAvatar(
                 radius: 20,
                 backgroundColor: colors.tertiaryContainer,
@@ -714,8 +795,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 ),
               ),
               const SizedBox(width: 16),
-
-              // Location name
               Expanded(
                 child: Text(
                   location.name,
@@ -724,8 +803,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   ),
                 ),
               ),
-
-              // Chevron affordance
               Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
             ],
           ),

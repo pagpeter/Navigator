@@ -174,7 +174,7 @@ Widget _stationResult(BuildContext context, Station station) {
           context,
           MaterialPageRoute(
             builder: (_) =>
-                ConnectionsPageAndroid(ConnectionsPage(), station),
+                ConnectionsPageAndroid(ConnectionsPage(from: Location(id: '', latitude: 0, longitude: 0, name: '', type: ''), to: station, services: widget.page.service)),
           ),
         );
       },
@@ -264,7 +264,7 @@ Widget _locationResult(BuildContext context, Location location) {
           context,
           MaterialPageRoute(
             builder: (_) =>
-                ConnectionsPageAndroid(ConnectionsPage(), location),
+                ConnectionsPageAndroid(ConnectionsPage(from: Location(id: '', latitude: 0, longitude: 0, name: '', type: ''), to: location, services: widget.page.service)),
           ),
         );
       },

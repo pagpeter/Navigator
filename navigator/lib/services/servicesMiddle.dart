@@ -4,10 +4,12 @@ import 'package:navigator/models/station.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/location.dart' as myApp;
 import 'package:geocoding/geocoding.dart' as geo;
+import 'package:navigator/services/geoLocator.dart';
 
 class ServicesMiddle 
 {
   dbApiService dbRest = new dbApiService();
+  GeoService geoService = new GeoService();
 
   Future<List<myApp.Location>> getLocations(String query) async
   {
@@ -46,5 +48,20 @@ class ServicesMiddle
     print("Journeys fetched: " + results.length.toString());
     return results;
   }
+
+  Future<myApp.Location> getCurrentLocation() async
+  {
+    try {
+      final pos = await geoService.determinePosition();
+      return myApp.Location.fromPosition(pos);
+
+    } catch (err) {
+      print('Error getting Location: $err');
+      return myApp.Location(type: '', id: '', name: '', latitude: 0, longitude: 0);
+      
+    }
+  }
+
+  
 
 }

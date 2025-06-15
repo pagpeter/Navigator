@@ -5,9 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/location.dart';
+import 'package:navigator/pages/android/journey_page_android.dart';
 import 'package:navigator/pages/page_models/connections_page.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:navigator/models/dateAndTime.dart';
+import 'package:navigator/pages/page_models/journey_page.dart';
 
 
 
@@ -326,6 +328,17 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid>
         //Input Fields
         //Search related Buttons
         //Results
+
+        ElevatedButton(
+          child: Text('Debug to get to journeys page'),
+          onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                JourneyPageAndroid(JourneyPage(journey: Journey(legs: []))),
+          ),
+        ))
+      
         
       ],),)),
       bottomNavigationBar: NavigationBar(

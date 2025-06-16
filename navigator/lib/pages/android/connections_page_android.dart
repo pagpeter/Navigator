@@ -545,9 +545,9 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString()),
+                        Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleSmall,),
                         Text(r.legs[0].plannedDepartureDateTime.hour.toString() + ':' + r.legs[0].plannedDepartureDateTime.minute.toString(), 
-                             style: TextStyle(fontSize: 12, color: Colors.grey)),
+                             style: Theme.of(context).textTheme.labelSmall),
                       ],
                     ),
                     Icon(Icons.arrow_forward),

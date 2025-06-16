@@ -11,6 +11,7 @@ area["name"="Berlin"]->.a;
 (
   relation["route"="subway"](area.a);
   relation["route"="light_rail"](area.a);
+  relation["route" ="tram"](area.a);
 )->.r;
 .r >> -> .x;
 .x out geom;
@@ -43,7 +44,8 @@ area["name"="Berlin"]->.a;
       if (element['type'] == 'relation' && 
           element.containsKey('tags') && 
           (element['tags']['route'] == 'subway' || 
-          element['tags']['route'] == 'light_rail')) {
+          element['tags']['route'] == 'light_rail' ||
+          element['tags']['route'] == 'tram')) {
         
         final tags = element['tags'];
         relationData[element['id']] = {

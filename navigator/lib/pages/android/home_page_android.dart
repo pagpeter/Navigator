@@ -33,6 +33,14 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   final MapController _mapController = MapController();
   List<Polyline> _lines = [];
 
+  //Map Options
+  bool showLightRail = true;
+  List<Polyline> _lightRailLines = [];
+  bool showSubway = true;
+  List<Polyline> _subwayLines = [];
+  bool showTram = false;
+  List<Polyline> _tramLines = [];
+
   @override
   void initState() {
     super.initState();
@@ -64,8 +72,52 @@ class _HomePageAndroidState extends State<HomePageAndroid>
             .map(
               (subwayLine) => Polyline(
                 points: subwayLine.points,
-                strokeWidth: 4.0,
-                color: subwayLine.color, // Use the actual line color!
+                strokeWidth: 2.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
+              ),
+            )
+            .toList();
+            _subwayLines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'subway',
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 2.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
+              ),
+            )
+            .toList();
+            _lightRailLines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'light_rail',
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 2.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
+              ),
+            )
+            .toList();
+            _tramLines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'tram',
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 2.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
               ),
             )
             .toList();
@@ -220,7 +272,12 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                           'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.example.app',
                     ),
-                    PolylineLayer(polylines: _lines),
+                    if(showSubway)
+                    PolylineLayer(polylines: _subwayLines),
+                    if(showLightRail)
+                    PolylineLayer(polylines: _lightRailLines),
+                    if(showTram)
+                    PolylineLayer(polylines: _tramLines)
                   ],
                 ),
         ),
@@ -232,24 +289,119 @@ class _HomePageAndroidState extends State<HomePageAndroid>
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _controller,
-              onChanged: _onSearchChanged,
-              style: TextStyle(color: colors.onPrimaryContainer),
-              decoration: InputDecoration(
-                hintText: 'Where do you want to go?',
-                prefixIcon: Icon(Icons.location_pin, color: colors.primary),
-                filled: true,
-                fillColor: colors.primaryContainer,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+            child: Row(
+              spacing: 16,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    onChanged: _onSearchChanged,
+                    style: TextStyle(color: colors.onPrimaryContainer),
+                    decoration: InputDecoration(
+                      hintText: 'Where do you want to go?',
+                      prefixIcon: Icon(Icons.location_pin, color: colors.primary),
+                      filled: true,
+                      fillColor: colors.primaryContainer,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                IconButton.filledTonal(
+  onPressed: () {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.4, // 40% of screen
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: <Widget>[
+                    // Handle bar
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Map Options',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        children: [
+                          CheckboxListTile(
+                                title: const Text('Show S-Bahn'),
+                                value: showLightRail,
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    showLightRail = value!;
+                                  });
+                                  setState(() {
+                                    showLightRail = value!;
+                                  });
+                                },
+                              ),
+                              CheckboxListTile(
+                                title: const Text('Show U-Bahn'),
+                                value: showSubway,
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    showSubway = value!;
+                                  });
+                                  setState(() {
+                                    showSubway = value!;
+                                  });
+                                },
+                              ),
+                              CheckboxListTile(
+                                title: const Text('Show Tram'),
+                                value: showTram,
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    showTram = value!;
+                                  });
+                                  setState(() {
+                                    showTram = value!;
+                                  });
+                                },
+                              ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            );
+          },
+        );
+      },
+    );
+  },
+  icon: Icon(Icons.settings),
+)
+               ],
             ),
           ),
         ),
@@ -262,6 +414,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
       ),
     );
   }
+
+  
 
   Widget _stationResult(BuildContext context, Station station) {
     final theme = Theme.of(context);

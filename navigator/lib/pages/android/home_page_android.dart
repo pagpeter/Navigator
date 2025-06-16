@@ -14,6 +14,7 @@ class HomePageAndroid extends StatefulWidget {
   final HomePage page;
   final bool ongoingJourney;
 
+
   const HomePageAndroid(this.page, this.ongoingJourney, {Key? key})
     : super(key: key);
 
@@ -21,11 +22,15 @@ class HomePageAndroid extends StatefulWidget {
   State<HomePageAndroid> createState() => _HomePageAndroidState();
 }
 
-class _HomePageAndroidState extends State<HomePageAndroid> {
+class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   List<Location> _searchResults = [];
   String _lastSearchedText = '';
   Timer? _debounce;
+  LatLng? _currentUserLocation;
+  LatLng _currentCenter = LatLng(52.513416, 13.412364);
+  double _currentZoom = 10;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -34,7 +39,64 @@ class _HomePageAndroidState extends State<HomePageAndroid> {
     _controller.addListener(() {
       _onSearchChanged(_controller.text.trim());
     });
+
+    _setInitialUserLocation();
   }
+
+  void animatedMapMove(LatLng destLocation, double destZoom) {
+    final latTween = Tween<double>(
+      begin: _currentCenter.latitude,
+      end: destLocation.latitude,
+    );
+    final lngTween = Tween<double>(
+      begin: _currentCenter.longitude,
+      end: destLocation.longitude,
+    );
+    final zoomTween = Tween<double>(
+      begin: _currentZoom,
+      end: destZoom,
+    );
+
+    var controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.easeOut);
+
+    controller.addListener(() {
+      _mapController.move(
+        LatLng(
+          latTween.evaluate(animation),
+          lngTween.evaluate(animation),
+        ),
+        zoomTween.evaluate(animation),
+      );
+    });
+
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+        controller.dispose();
+      }
+    });
+
+    controller.forward();
+  }
+
+
+  Future<void> _setInitialUserLocation() async {
+    final loc = await widget.page.service.getCurrentLocation();
+
+    if (loc.latitude != 0 && loc.longitude != 0) {
+      final newCenter = LatLng(loc.latitude, loc.longitude);
+      setState(() {
+        _currentUserLocation = newCenter;
+      });
+
+      animatedMapMove(newCenter, 12.0);
+    }
+  }
+
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -105,10 +167,15 @@ Widget build(BuildContext context) {
                 ),
             )
             : FlutterMap(
-                options: MapOptions(
-                  initialCenter: LatLng(52.513416, 13.412364),
-                  initialZoom: 9.2,
-                ),
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _currentUserLocation ?? _currentCenter,
+            initialZoom: _currentZoom,
+            onPositionChanged: (position, hasGesture) {
+              _currentCenter = position.center;
+              _currentZoom = position.zoom;
+                        },
+          ),
                 children: [
                   TileLayer(
                     urlTemplate: 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',

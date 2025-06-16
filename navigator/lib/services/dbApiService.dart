@@ -8,7 +8,6 @@ import 'package:navigator/env/env.dart';
 import 'package:navigator/models/leg.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 
-
 class dbApiService {
   final base_url = Env.api_url;
 
@@ -34,9 +33,13 @@ class dbApiService {
       queryParams['from.latitude'] = from.latitude.toString();
       queryParams['from.longitude'] = from.longitude.toString();
 
-      final placemarks = await geo.placemarkFromCoordinates(from.latitude!, from.longitude!);
-      if (placemarks.isNotEmpty) {
-        queryParams['from.address'] = buildAddress(placemarks.first);
+      try {
+        final placemarks = await geo.placemarkFromCoordinates(from.latitude!, from.longitude!);
+        if (placemarks.isNotEmpty) {
+          queryParams['from.address'] = buildAddress(placemarks.first);
+        }
+      } catch (e) {
+        print('Error getting address for from location: $e');
       }
     } else {
       throw Exception('Invalid "from" location: missing id or coordinates');
@@ -49,16 +52,20 @@ class dbApiService {
       queryParams['to.latitude'] = to.latitude.toString();
       queryParams['to.longitude'] = to.longitude.toString();
 
-      final placemarks = await geo.placemarkFromCoordinates(to.latitude!, to.longitude!);
-      if (placemarks.isNotEmpty) {
-        queryParams['to.address'] = buildAddress(placemarks.first);
+      try {
+        final placemarks = await geo.placemarkFromCoordinates(to.latitude!, to.longitude!);
+        if (placemarks.isNotEmpty) {
+          queryParams['to.address'] = buildAddress(placemarks.first);
+        }
+      } catch (e) {
+        print('Error getting address for to location: $e');
       }
     } else {
       throw Exception('Invalid "to" location: missing id or coordinates');
     }
 
     // Time handling
-    final timeParam = when.ISO8601String(); // or a custom formatted string
+    final timeParam = when.ISO8601String();
     if (departure) {
       queryParams['departure'] = timeParam;
     } else {
@@ -70,50 +77,101 @@ class dbApiService {
     final uri = Uri.http(base_url, '/journeys', queryParams);
     print('Request URI: $uri');
 
-    final response = await http.get(uri);
+    try {
+      final response = await http.get(uri);
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      final journeysJson = data['journeys'] as List;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        
+        // Check if journeys key exists and is not null
+        if (data['journeys'] == null) {
+          print('No journeys found in response');
+          return [];
+        }
+        
+        final journeysJson = data['journeys'] as List;
 
-      return journeysJson.map<Journey>((journeyJson) {
-        final legsJson = journeyJson['legs'] as List;
+        return journeysJson.map<Journey>((journeyJson) {
+          if (journeyJson == null || journeyJson['legs'] == null) {
+            print('Invalid journey data: $journeyJson');
+            return Journey(legs: []);
+          }
+          
+          final legsJson = journeyJson['legs'] as List;
 
-        List<Leg> legs = legsJson.map<Leg>((legJson) {
-          final originJson = legJson['origin'];
-          final destinationJson = legJson['destination'];
+          List<Leg> legs = legsJson.map<Leg>((legJson) {
+            if (legJson == null) {
+              print('Invalid leg data: null');
+              return Leg(
+                tripID: '',
+                direction: '',
+                origin: Station.empty(),
+                departure: '',
+                plannedDeparture: '',
+                departureDelay: '',
+                departurePlatform: '',
+                plannedDeparturePlatform: '',
+                destination: Station.empty(),
+                arrival: '',
+                plannedArrival: '',
+                arrivalDelay: '',
+                arrivalPlatform: '',
+                plannedArrivalPlatform: '',
+              );
+            }
 
-          final origin = originJson != null ? Station.fromJson(originJson) : null;
-          final destination = destinationJson != null ? Station.fromJson(destinationJson) : null;
+            final originJson = legJson['origin'];
+            final destinationJson = legJson['destination'];
 
-          return Leg(
-            tripID: legJson['tripId'] ?? '',
-            direction: legJson['line']?['direction'] ?? '',
-            origin: origin ?? Station.empty(),
-            departure: legJson['departure'] ?? '',
-            plannedDeparture: legJson['plannedDeparture'] ?? '',
-            departureDelay: legJson['departureDelay']?.toString() ?? '',
-            departurePlatform: legJson['departurePlatform'] ?? '',
-            plannedDeparturePlatform: legJson['plannedDeparturePlatform'] ?? '',
-            destination: destination ?? Station.empty(),
-            arrival: legJson['arrival'] ?? '',
-            plannedArrival: legJson['plannedArrival'] ?? '',
-            arrivalDelay: legJson['arrivalDelay']?.toString() ?? '',
-            arrivalPlatform: legJson['arrivalPlatform'] ?? '',
-            plannedArrivalPlatform: legJson['plannedArrivalPlatform'] ?? '',
-          );
+            final origin = originJson != null ? Station.fromJson(originJson) : Station.empty();
+            final destination = destinationJson != null ? Station.fromJson(destinationJson) : Station.empty();
+
+            // Helper function to safely get string values
+            String safeGetString(dynamic value) {
+              if (value == null) return '';
+              return value.toString();
+            }
+
+            // Helper function to safely get nested string values
+            String safeGetNestedString(Map<String, dynamic>? parent, String key) {
+              if (parent == null) return '';
+              final value = parent[key];
+              if (value == null) return '';
+              return value.toString();
+            }
+
+            return Leg(
+              tripID: safeGetString(legJson['tripId']),
+              direction: safeGetNestedString(legJson['line'], 'direction'),
+              origin: origin,
+              departure: safeGetString(legJson['departure']),
+              plannedDeparture: safeGetString(legJson['plannedDeparture']),
+              departureDelay: safeGetString(legJson['departureDelay']),
+              departurePlatform: safeGetString(legJson['departurePlatform']),
+              plannedDeparturePlatform: safeGetString(legJson['plannedDeparturePlatform']),
+              destination: destination,
+              arrival: safeGetString(legJson['arrival']),
+              plannedArrival: safeGetString(legJson['plannedArrival']),
+              arrivalDelay: safeGetString(legJson['arrivalDelay']),
+              arrivalPlatform: safeGetString(legJson['arrivalPlatform']),
+              plannedArrivalPlatform: safeGetString(legJson['plannedArrivalPlatform']),
+            );
+          }).toList();
+
+          return Journey(legs: legs);
         }).toList();
-
-        return Journey(legs: legs);
-      }).toList();
-    } else {
-      throw Exception('Failed to load journeys: ${response.statusCode}');
+      } else {
+        print('HTTP Error: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to load journeys: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Exception in fetchJourneysByLocation: $e');
+      rethrow;
     }
   }
-
-
-
-
 
   Future<List<Location>> fetchLocations(String query) async {
     final uri = Uri.http(base_url, '/locations', {
@@ -122,22 +180,45 @@ class dbApiService {
       'query': query,
     });
 
-    final response = await http.get(uri);
+    try {
+      final response = await http.get(uri);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      print(jsonEncode(data)); // Pretty print or handle as needed
-      return (data as List)
-    .where((item) => (item['id'] != null && item['id'].toString().toLowerCase() != 'null') || !(item['type'] != 'station' && item['latitude'] != null && item['longitude'] != null))
-    .map<Location>((item) {
-      if (item['type'] == 'station' || item['type'] == 'stop') {
-        return Station.fromJson(item);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        print('Locations response: ${jsonEncode(data)}');
+        
+        return (data as List)
+            .where((item) => item != null && (
+                (item['id'] != null && item['id'].toString().toLowerCase() != 'null') || 
+                (item['type'] != 'station' && item['latitude'] != null && item['longitude'] != null)
+            ))
+            .map<Location>((item) {
+              try {
+                if (item['type'] == 'station' || item['type'] == 'stop') {
+                  return Station.fromJson(item);
+                } else {
+                  return Location.fromJson(item);
+                }
+              } catch (e) {
+                print('Error parsing location item: $e');
+                print('Item: $item');
+                // Return a basic location to avoid breaking the entire list
+                return Location(
+                  id: item['id']?.toString() ?? '',
+                  name: item['name']?.toString() ?? 'Unknown',
+                  type: item['type']?.toString() ?? 'unknown',
+                  latitude: item['location']?['latitude']?.toDouble() ?? item['latitude']?.toDouble(),
+                  longitude: item['location']?['longitude']?.toDouble() ?? item['longitude']?.toDouble(),
+                  address: null,
+                );
+              }
+            }).toList();
       } else {
-        return Location.fromJson(item);
+        throw Exception('Failed to load locations: ${response.statusCode}');
       }
-    }).toList();
-    } else {
-      throw Exception('Failed to load locations: ${response.statusCode}');
+    } catch (e) {
+      print('Exception in fetchLocations: $e');
+      rethrow;
     }
   }
 }

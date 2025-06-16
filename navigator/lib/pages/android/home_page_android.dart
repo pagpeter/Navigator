@@ -14,7 +14,6 @@ class HomePageAndroid extends StatefulWidget {
   final HomePage page;
   final bool ongoingJourney;
 
-
   const HomePageAndroid(this.page, this.ongoingJourney, {Key? key})
     : super(key: key);
 
@@ -22,7 +21,8 @@ class HomePageAndroid extends StatefulWidget {
   State<HomePageAndroid> createState() => _HomePageAndroidState();
 }
 
-class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProviderStateMixin {
+class _HomePageAndroidState extends State<HomePageAndroid>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   List<Location> _searchResults = [];
   String _lastSearchedText = '';
@@ -31,16 +31,53 @@ class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProv
   LatLng _currentCenter = LatLng(52.513416, 13.412364);
   double _currentZoom = 10;
   final MapController _mapController = MapController();
+  List<Polyline> _lines = [];
 
   @override
   void initState() {
     super.initState();
+    initiateLines();
 
     _controller.addListener(() {
       _onSearchChanged(_controller.text.trim());
     });
 
     _setInitialUserLocation();
+  }
+
+  Future<void> initiateLines() async {
+    await widget.page.service.refreshPolylines();
+
+    print(
+      "loadedSubwayLines.length = ${widget.page.service.loadedSubwayLines.length}",
+    );
+    print(
+      "First line length: ${widget.page.service.loadedSubwayLines.firstOrNull?.points.length ?? 0}",
+    );
+
+    if (widget.page.service.loadedSubwayLines.isNotEmpty) {
+      setState(() {
+        _lines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty,
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 4.0,
+                color: subwayLine.color, // Use the actual line color!
+              ),
+            )
+            .toList();
+      });
+
+      print("Mapped ${_lines.length} colored polylines for display.");
+
+      // Debug: Print some color info
+      for (var line in widget.page.service.loadedSubwayLines.take(3)) {
+        print("Line: ${line.lineName} - Color: ${line.color}");
+      }
+    }
   }
 
   void animatedMapMove(LatLng destLocation, double destZoom) {
@@ -52,37 +89,34 @@ class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProv
       begin: _currentCenter.longitude,
       end: destLocation.longitude,
     );
-    final zoomTween = Tween<double>(
-      begin: _currentZoom,
-      end: destZoom,
-    );
+    final zoomTween = Tween<double>(begin: _currentZoom, end: destZoom);
 
     var controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    Animation<double> animation = CurvedAnimation(parent: controller, curve: Curves.easeOut);
+    Animation<double> animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeOut,
+    );
 
     controller.addListener(() {
       _mapController.move(
-        LatLng(
-          latTween.evaluate(animation),
-          lngTween.evaluate(animation),
-        ),
+        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
         zoomTween.evaluate(animation),
       );
     });
 
     controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
         controller.dispose();
       }
     });
 
     controller.forward();
   }
-
 
   Future<void> _setInitialUserLocation() async {
     final loc = await widget.page.service.getCurrentLocation();
@@ -96,7 +130,6 @@ class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProv
       animatedMapMove(newCenter, 12.0);
     }
   }
-
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -123,251 +156,298 @@ class _HomePageAndroidState extends State<HomePageAndroid> with SingleTickerProv
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  final colors = theme.colorScheme;
-  final hasResults = _searchResults.isNotEmpty;
-  const bottomSheetHeight = 96.0;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final hasResults = _searchResults.isNotEmpty;
+    const bottomSheetHeight = 96.0;
 
-  return WillPopScope(
-    onWillPop: () async {
-      if (hasResults) {
-        // clear the search and go back to the map
-        setState(() {
-          _searchResults.clear();
-          _lastSearchedText = '';
-          _controller.clear();
-        });
-        return false; // prevent actual pop
-      }
-      return true; // allow actual back navigation if no results
-    },
-    child: Scaffold(
-      backgroundColor: colors.surfaceVariant,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        transitionBuilder: (child, anim) =>
-            FadeTransition(opacity: anim, child: child),
-        child: hasResults
-            ? SafeArea(
-              child: ListView.builder(
-                  key: const ValueKey('list'),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, bottomSheetHeight + 16),
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, i) {
-                    final r = _searchResults[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: r is Station
-                          ? _stationResult(context, r)
-                          : _locationResult(context, r),
-                    );
-                  },
-                ),
-            )
-            : FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: _currentUserLocation ?? _currentCenter,
-            initialZoom: _currentZoom,
-            onPositionChanged: (position, hasGesture) {
-              _currentCenter = position.center;
-              _currentZoom = position.zoom;
-                        },
-          ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.app',
+    return WillPopScope(
+      onWillPop: () async {
+        if (hasResults) {
+          // clear the search and go back to the map
+          setState(() {
+            _searchResults.clear();
+            _lastSearchedText = '';
+            _controller.clear();
+          });
+          return false; // prevent actual pop
+        }
+        return true; // allow actual back navigation if no results
+      },
+      child: Scaffold(
+        backgroundColor: colors.surfaceVariant,
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          transitionBuilder: (child, anim) =>
+              FadeTransition(opacity: anim, child: child),
+          child: hasResults
+              ? SafeArea(
+                  child: ListView.builder(
+                    key: const ValueKey('list'),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      8,
+                      16,
+                      bottomSheetHeight + 16,
+                    ),
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, i) {
+                      final r = _searchResults[i];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: r is Station
+                            ? _stationResult(context, r)
+                            : _locationResult(context, r),
+                      );
+                    },
                   ),
-                ],
-              ),
-      ),
-      bottomSheet: Material(
-        color: colors.surfaceContainerHighest,
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                )
+              : FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _currentUserLocation ?? _currentCenter,
+                    initialZoom: _currentZoom,
+                    onPositionChanged: (position, hasGesture) {
+                      _currentCenter = position.center;
+                      _currentZoom = position.zoom;
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.app',
+                    ),
+                    PolylineLayer(polylines: _lines),
+                  ],
+                ),
         ),
+        bottomSheet: Material(
+          color: colors.surfaceContainerHighest,
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _controller,
+              onChanged: _onSearchChanged,
+              style: TextStyle(color: colors.onPrimaryContainer),
+              decoration: InputDecoration(
+                hintText: 'Where do you want to go?',
+                prefixIcon: Icon(Icons.location_pin, color: colors.primary),
+                filled: true,
+                fillColor: colors.primaryContainer,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
+        bottomNavigationBar: NavigationBar(
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+            NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _stationResult(BuildContext context, Station station) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      color: colors.surfaceContainerHighest,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ConnectionsPageAndroid(
+                ConnectionsPage(
+                  from: Location(
+                    id: '',
+                    latitude: 0,
+                    longitude: 0,
+                    name: '',
+                    type: '',
+                  ),
+                  to: station,
+                  services: widget.page.service,
+                ),
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _controller,
-            onChanged: _onSearchChanged,
-            style: TextStyle(color: colors.onPrimaryContainer),
-            decoration: InputDecoration(
-              hintText: 'Where do you want to go?',
-              prefixIcon: Icon(Icons.location_pin, color: colors.primary),
-              filled: true,
-              fillColor: colors.primaryContainer,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
-        ],
-      ),
-    ),
-  );
-}
-
-
-Widget _stationResult(BuildContext context, Station station) {
-  final theme = Theme.of(context);
-  final colors = theme.colorScheme;
-
-  return Card(
-    clipBehavior: Clip.hardEdge,
-    color: colors.surfaceContainerHighest,
-    elevation: 1,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ConnectionsPageAndroid(ConnectionsPage(from: Location(id: '', latitude: 0, longitude: 0, name: '', type: ''), to: station, services: widget.page.service)),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Tonal avatar for the station icon
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: colors.tertiaryContainer,
-              child: SvgPicture.asset(
-                "assets/Icon/Train_Station_Icon.svg",
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(
-                  colors.onTertiaryContainer,
-                  BlendMode.srcIn,
+          child: Row(
+            children: [
+              // Tonal avatar for the station icon
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: colors.tertiaryContainer,
+                child: SvgPicture.asset(
+                  "assets/Icon/Train_Station_Icon.svg",
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    colors.onTertiaryContainer,
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
+              const SizedBox(width: 16),
 
-            // Station name + service icons
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    station.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colors.onSurfaceVariant,
+              // Station name + service icons
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      station.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      if (station.national || station.nationalExpress)
-                        Icon(Icons.train, size: 20, color: colors.tertiary),
-                      if (station.regionalExpress)
-                        Icon(Icons.directions_railway, size: 20, color: colors.tertiary),
-                      if (station.regional)
-                        Icon(Icons.directions_transit, size: 20, color: colors.tertiary),
-                      if (station.suburban)
-                        Icon(Icons.directions_subway, size: 20, color: colors.tertiary),
-                      if (station.bus)
-                        Icon(Icons.directions_bus, size: 20, color: colors.tertiary),
-                      if (station.ferry)
-                        Icon(Icons.directions_ferry, size: 20, color: colors.tertiary),
-                      if (station.subway)
-                        Icon(Icons.subway, size: 20, color: colors.tertiary),
-                      if (station.tram)
-                        Icon(Icons.tram, size: 20, color: colors.tertiary),
-                      if (station.taxi)
-                        Icon(Icons.local_taxi, size: 20, color: colors.tertiary),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (station.national || station.nationalExpress)
+                          Icon(Icons.train, size: 20, color: colors.tertiary),
+                        if (station.regionalExpress)
+                          Icon(
+                            Icons.directions_railway,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.regional)
+                          Icon(
+                            Icons.directions_transit,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.suburban)
+                          Icon(
+                            Icons.directions_subway,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.bus)
+                          Icon(
+                            Icons.directions_bus,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.ferry)
+                          Icon(
+                            Icons.directions_ferry,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                        if (station.subway)
+                          Icon(Icons.subway, size: 20, color: colors.tertiary),
+                        if (station.tram)
+                          Icon(Icons.tram, size: 20, color: colors.tertiary),
+                        if (station.taxi)
+                          Icon(
+                            Icons.local_taxi,
+                            size: 20,
+                            color: colors.tertiary,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Trailing chevron
-            Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
-          ],
+              // Trailing chevron
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _locationResult(BuildContext context, Location location) {
-  final theme = Theme.of(context);
-  final colors = theme.colorScheme;
+  Widget _locationResult(BuildContext context, Location location) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-  return Card(
-    clipBehavior: Clip.hardEdge,
-    color: colors.surfaceContainerHighest,
-    elevation: 1,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ConnectionsPageAndroid(ConnectionsPage(from: Location(id: '', latitude: 0, longitude: 0, name: '', type: ''), to: location, services: widget.page.service)),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Tonal avatar for the “home” icon
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: colors.tertiaryContainer,
-              child: Icon(
-                Icons.house,
-                size: 24,
-                color: colors.onTertiaryContainer,
-              ),
-            ),
-            const SizedBox(width: 16),
-
-            // Location name
-            Expanded(
-              child: Text(
-                location.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colors.onSurfaceVariant,
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      color: colors.surfaceContainerHighest,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ConnectionsPageAndroid(
+                ConnectionsPage(
+                  from: Location(
+                    id: '',
+                    latitude: 0,
+                    longitude: 0,
+                    name: '',
+                    type: '',
+                  ),
+                  to: location,
+                  services: widget.page.service,
                 ),
               ),
             ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Tonal avatar for the “home” icon
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: colors.tertiaryContainer,
+                child: Icon(
+                  Icons.house,
+                  size: 24,
+                  color: colors.onTertiaryContainer,
+                ),
+              ),
+              const SizedBox(width: 16),
 
-            // Chevron affordance
-            Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
-          ],
+              // Location name
+              Expanded(
+                child: Text(
+                  location.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              // Chevron affordance
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

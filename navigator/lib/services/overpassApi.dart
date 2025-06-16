@@ -6,12 +6,14 @@ import 'package:navigator/models/subway_line.dart';
 class Overpassapi {
   Future<List<SubwayLine>> fetchSubwayLinesWithColors() async {
     const query = '''
-[out:json][timeout:25];
+[out:json][timeout:60];
 area["name"="Berlin"]->.a;
 (
   relation["route"="subway"](area.a);
   relation["route"="light_rail"](area.a);
-  relation["route" ="tram"](area.a);
+  relation["route"="tram"](area.a);
+  relation["route"="ferry"](area.a);
+  relation["route"="funicular"](area.a);
 )->.r;
 .r >> -> .x;
 .x out geom;
@@ -45,7 +47,11 @@ area["name"="Berlin"]->.a;
           element.containsKey('tags') && 
           (element['tags']['route'] == 'subway' || 
           element['tags']['route'] == 'light_rail' ||
-          element['tags']['route'] == 'tram')) {
+          element['tags']['route'] == 'tram' ||
+          // element['tags']['route'] == 'bus' ||
+          // element['tags']['route'] == 'trolleybus' ||
+          element['tags']['route'] == 'ferry' ||
+          element['tags']['route'] == 'funicular')) {
         
         final tags = element['tags'];
         relationData[element['id']] = {

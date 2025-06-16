@@ -40,6 +40,14 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   List<Polyline> _subwayLines = [];
   bool showTram = false;
   List<Polyline> _tramLines = [];
+  // bool showBus = false;
+  // List<Polyline> _busLines = [];
+  // bool showTrolleybus = false;
+  // List<Polyline> _trolleyBusLines = [];
+  bool showFerry = false;
+  List<Polyline> _ferryLines = [];
+  bool showFunicular = false;
+  List<Polyline> _funicularLines = [];
 
   @override
   void initState() {
@@ -110,6 +118,62 @@ class _HomePageAndroidState extends State<HomePageAndroid>
             _tramLines = widget.page.service.loadedSubwayLines
             .where(
               (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'tram',
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 2.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
+              ),
+            )
+            .toList();
+            // _busLines = widget.page.service.loadedSubwayLines
+            // .where(
+            //   (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'bus',
+            // ) // prevent empty lines
+            // .map(
+            //   (subwayLine) => Polyline(
+            //     points: subwayLine.points,
+            //     strokeWidth: 1.0,
+            //     color: subwayLine.color, 
+            //     borderColor: subwayLine.color.withAlpha(60)  
+            //     // Use the actual line color!
+            //   ),
+            // )
+            // .toList();
+            // _trolleyBusLines = widget.page.service.loadedSubwayLines
+            // .where(
+            //   (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'trolleybus',
+            // ) // prevent empty lines
+            // .map(
+            //   (subwayLine) => Polyline(
+            //     points: subwayLine.points,
+            //     strokeWidth: 1.0,
+            //     color: subwayLine.color, 
+            //     borderColor: subwayLine.color.withAlpha(60)  
+            //     // Use the actual line color!
+            //   ),
+            // )
+            // .toList();
+            _ferryLines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'ferry',
+            ) // prevent empty lines
+            .map(
+              (subwayLine) => Polyline(
+                points: subwayLine.points,
+                strokeWidth: 1.0,
+                color: subwayLine.color, 
+                borderColor: subwayLine.color.withAlpha(60)  
+                // Use the actual line color!
+              ),
+            )
+            .toList();
+            _funicularLines = widget.page.service.loadedSubwayLines
+            .where(
+              (subwayLine) => subwayLine.points.isNotEmpty && subwayLine.type == 'funicular',
             ) // prevent empty lines
             .map(
               (subwayLine) => Polyline(
@@ -277,7 +341,15 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     if(showLightRail)
                     PolylineLayer(polylines: _lightRailLines),
                     if(showTram)
-                    PolylineLayer(polylines: _tramLines)
+                    PolylineLayer(polylines: _tramLines),
+                    // if(showBus)
+                    // PolylineLayer(polylines: _busLines),
+                    // if(showTrolleybus)
+                    // PolylineLayer(polylines: _trolleyBusLines),
+                    if(showFerry)
+                    PolylineLayer(polylines: _ferryLines),
+                    if(showFunicular)
+                    PolylineLayer(polylines: _funicularLines)
                   ],
                 ),
         ),
@@ -387,6 +459,55 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                                   });
                                 },
                               ),
+                              // CheckboxListTile(
+                              //   title: const Text('Show Bus'),
+                              //   value: showBus,
+                              //   onChanged: (bool? value) {
+                              //     setModalState(() {
+                              //       showBus = value!;
+                              //     });
+                              //     setState(() {
+                              //       showBus = value!;
+                              //     });
+                              //   },
+                              // ),
+                              // CheckboxListTile(
+                              //   title: const Text('Show Trolleybus'),
+                              //   value: showTrolleybus,
+                              //   onChanged: (bool? value) {
+                              //     setModalState(() {
+                              //       showTrolleybus = value!;
+                              //     });
+                              //     setState(() {
+                              //       showTrolleybus = value!;
+                              //     });
+                              //   },
+                              // ),
+                              CheckboxListTile(
+                                title: const Text('Show Ferry'),
+                                value: showFerry,
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    showFerry = value!;
+                                  });
+                                  setState(() {
+                                    showFerry = value!;
+                                  });
+                                },
+                              ),
+                              CheckboxListTile(
+                                title: const Text('Show Funicular'),
+                                value: showFunicular,
+                                onChanged: (bool? value) {
+                                  setModalState(() {
+                                    showFunicular = value!;
+                                  });
+                                  setState(() {
+                                    showFunicular = value!;
+                                  });
+                                },
+                              ),
+
                         ],
                       ),
                     ),

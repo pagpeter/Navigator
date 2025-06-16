@@ -121,9 +121,24 @@ class Leg {
     return int.tryParse(arrivalDelay!);
   }
 
-  // Helper method to get actual departure/arrival times as DateTime
-  DateTime get departureDateTime => DateTime.parse(departure);
-  DateTime get arrivalDateTime => DateTime.parse(arrival);
-  DateTime get plannedDepartureDateTime => DateTime.parse(plannedDeparture);
-  DateTime get plannedArrivalDateTime => DateTime.parse(plannedArrival);
+  DateTime get departureDateTime {
+  final parsed = DateTime.parse(departure);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
+
+DateTime get arrivalDateTime {
+  final parsed = DateTime.parse(arrival);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
+
+DateTime get plannedDepartureDateTime {
+  final parsed = DateTime.parse(departure);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
+
+DateTime get plannedArrivalDateTime {
+  final parsed = DateTime.parse(arrival);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
+
 }

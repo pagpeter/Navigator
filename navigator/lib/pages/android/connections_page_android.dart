@@ -292,6 +292,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
         destinations: [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
@@ -535,6 +536,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       itemBuilder: (context, i) {
         final r = _currentJourneys![i];
         return Card(
+          color: Theme.of(context).colorScheme.secondaryContainer,
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Column(
@@ -545,7 +547,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleSmall,),
+                        Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium,),
                         Text(r.legs[0].plannedDepartureDateTime.hour.toString() + ':' + r.legs[0].plannedDepartureDateTime.minute.toString(), 
                              style: Theme.of(context).textTheme.labelSmall),
                       ],
@@ -554,28 +556,32 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(r.legs.last.arrivalDateTime.hour.toString() + ':' + r.legs.last.arrivalDateTime.minute.toString()),
+                        Text(r.legs.last.arrivalDateTime.hour.toString() + ':' + r.legs.last.arrivalDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium),
                         Text(r.legs.last.plannedArrivalDateTime.hour.toString() + ':' + r.legs.last.plannedArrivalDateTime.minute.toString(),
                              style: TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                     Column(
                       children: [
-                        Text(r.legs[0].arrivalDateTime.difference(r.legs.last.departureDateTime).inMinutes.toString()),
-                        Text(r.legs[0].plannedArrivalDateTime.difference(r.legs.last.plannedDepartureDateTime).inMinutes.toString())
+                        Text(r.legs.last.arrivalDateTime.difference(r.legs[0].departureDateTime).inMinutes.toString(), style: Theme.of(context).textTheme.titleMedium),
+                        Text(r.legs.last.plannedArrivalDateTime.difference(r.legs[0].plannedDepartureDateTime).inMinutes.toString())
                       ],
                     )
                   ],
                 ),
                 Row(
                   children: [
-                    _buildModeLine(context, r),
-                    Text((r.legs.length - 2).toString()),
+                    Expanded(child: _buildModeLine(context, r)),
+                    Row(
+                      children: [
+                        Text((r.legs.length - 2).toString()),
                     Icon(Icons.transfer_within_a_station),
+                      ],
+                    ),
                   ],
                 ),
                 Row(children: [
-                  Text('Departure in: ' + (r.legs[0].departureDateTime.toLocal().difference(DateTime.now()).inMinutes.toString())),
+                  Text('Leave in: ' + (r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes.toString())),
                 ],)
 
               ],
@@ -589,7 +595,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
 
   Widget _buildModeLine(BuildContext context, Journey j)
   {
-    return Text('Ich bin nachher diese Linie die so die verschiedenen Linien nacheinandaner anzeigt');
+    return Text('test');
   }
 
   Widget _buildButtons(BuildContext context) {

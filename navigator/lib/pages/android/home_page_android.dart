@@ -282,7 +282,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                 ),
         ),
         bottomSheet: Material(
-          color: colors.surfaceContainerHighest,
+          color: colors.surfaceContainer,
           elevation: 8,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(16)),

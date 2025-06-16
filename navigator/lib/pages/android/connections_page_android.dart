@@ -151,83 +151,38 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Future<void> getJourneys(
-    String fromId,
-    String toId,
-    double fromLat,
-    double fromLon,
-    double toLat,
-    double toLong,
-    DateAndTime when,
-    bool departure,
-  ) async {
-    String? fromAddress;
-    if (fromId.isEmpty) {
-      try {
-        final placemarks = await geo.placemarkFromCoordinates(fromLat, fromLon);
-        if (placemarks.isNotEmpty) {
-          final placemark = placemarks.first;
-          final city = placemark.locality ?? '';
-          final street = placemark.street ?? '';
-          fromAddress = _buildAddressString(city, street);
-        }
-      } catch (e) {
-        print('Failed to get address for from coordinates: $e');
-        fromAddress = null;
-      }
-    }
+  String fromId,
+  String toId,
+  double fromLat,
+  double fromLon,
+  double toLat,
+  double toLong,
+  DateAndTime when,
+  bool departure,
+) async {
+  try {
+    print('Getting journeys with params:');
+    print('From: $fromId ($fromLat, $fromLon)');
+    print('To: $toId ($toLat, $toLong)');
+    
+    // Build Location objects
+    final from = Location(
+      id: fromId,
+      latitude: fromLat,
+      longitude: fromLon,
+      name: widget.page.from?.name ?? "From Location",
+      type: widget.page.from?.type ?? "geo",
+      address: null,
+    );
 
-    String? toAddress;
-    if (toId.isEmpty) {
-      try {
-        final placemarks = await geo.placemarkFromCoordinates(toLat, toLong);
-        if (placemarks.isNotEmpty) {
-          final placemark = placemarks.first;
-          final city = placemark.locality ?? '';
-          final street = placemark.street ?? '';
-          toAddress = _buildAddressString(city, street);
-        }
-      } catch (e) {
-        print('Failed to get address for to coordinates: $e');
-        toAddress = null;
-      }
-    }
-
-    // Rest of the method remains the same...
-    final from = fromId.isEmpty
-        ? Location(
-            id: '',
-            latitude: fromLat,
-            longitude: fromLon,
-            name: "Current Location",
-            type: "geo",
-            address: fromAddress,
-          )
-        : Location(
-            id: fromId,
-            latitude: 0,
-            longitude: 0,
-            name: "",
-            type: "",
-            address: null,
-          );
-
-    final to = toId.isEmpty
-        ? Location(
-            id: '',
-            latitude: toLat,
-            longitude: toLong,
-            name: widget.page.to.name,
-            type: widget.page.to.type,
-            address: toAddress,
-          )
-        : Location(
-            id: toId,
-            latitude: toLat,
-            longitude: toLong,
-            name: widget.page.to.name,
-            type: widget.page.to.type,
-            address: null,
-          );
+    final to = Location(
+      id: toId,
+      latitude: toLat,
+      longitude: toLong,
+      name: widget.page.to?.name ?? "To Location", 
+      type: widget.page.to?.type ?? "geo",
+      address: null,
+    );
 
     final journeys = await widget.page.services.getJourneys(
       from,
@@ -236,10 +191,18 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       departure,
     );
 
+    print('Received ${journeys.length} journeys');
+    
     setState(() {
       _currentJourneys = journeys;
     });
+  } catch (e) {
+    print('Error getting journeys: $e');
+    setState(() {
+      _currentJourneys = []; // Empty list to show "no results"
+    });
   }
+}
 
   Future<void> _fetchJourneysFromCurrentLocation() async {
     if (_selectedPosition == null) return;
@@ -558,41 +521,54 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildJourneys(BuildContext context) {
-    if(_currentJourneys == null)
-    {
-      return CircularProgressIndicator();
-    }
-    if(_currentJourneys!.isEmpty)
-    {
-      return CircularProgressIndicator();
-    }
-    return Expanded(
-      child: ListView.builder(
-        key: const ValueKey('list'),
-        padding: EdgeInsets.all(8),
-        itemCount: _currentJourneys!.length,
-        itemBuilder: (context, i)
-        {
-          final r = _currentJourneys![i];
-          return Padding(padding: EdgeInsets.all(8), child: Column(children: [
-            Row(children: [
-              Column(
-                children: [
-                  Text(r.legs[0].departure),
-                  Text(r.legs[0].plannedDeparture)
-                ],
-              ),
-              Icon(Icons.arrow_forward),
-              Column(children: [
-                Text(r.legs.last.arrival),
-                Text(r.legs.last.plannedArrival),
-              ],)
-            ],)
-          ],),);
-        }
-      ),
-    );
+  if (_currentJourneys == null) {
+    return Center(child: CircularProgressIndicator());
   }
+  if (_currentJourneys!.isEmpty) {
+    return Center(child: Text('No journeys found'));
+  }
+  return Expanded(
+    child: ListView.builder(
+      key: const ValueKey('list'),
+      padding: EdgeInsets.all(8),
+      itemCount: _currentJourneys!.length,
+      itemBuilder: (context, i) {
+        final r = _currentJourneys![i];
+        return Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(r.legs[0].departure),
+                        Text(r.legs[0].plannedDeparture, 
+                             style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                    Icon(Icons.arrow_forward),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(r.legs.last.arrival),
+                        Text(r.legs.last.plannedArrival,
+                             style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildButtons(BuildContext context) {
     return Column(
@@ -672,7 +648,34 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               ),
             ),
             FilledButton.tonalIcon(
-              onPressed: () => getJourneys(widget.page.from.id, widget.page.to.id, widget.page.from.latitude, widget.page.from.longitude, widget.page.to.latitude, widget.page.to.longitude, DateAndTime.fromDateTimeAndTime(_selectedDate, _selectedTime), departure),
+              onPressed: () async {
+              try {
+                // Debug prints
+                print('From: ${widget.page.from}');
+                print('To: ${widget.page.to}');
+                
+                if (widget.page.from == null || widget.page.to == null) {
+                  print('ERROR: from or to is null');
+                  return;
+                }
+                
+                await getJourneys(
+                  widget.page.from.id ?? '',
+                  widget.page.to.id ?? '',
+                  widget.page.from.latitude ?? 0.0,
+                  widget.page.from.longitude ?? 0.0,
+                  widget.page.to.latitude ?? 0.0,
+                  widget.page.to.longitude ?? 0.0,
+                  DateAndTime.fromDateTimeAndTime(_selectedDate, _selectedTime),
+                  departure
+                );
+              } catch (e) {
+                print('Error in search: $e');
+                setState(() {
+                  _currentJourneys = []; // Set to empty list to show "no results"
+                });
+              }
+            },
               label: Text('Search'),
               icon: Icon(Icons.search),
             ),

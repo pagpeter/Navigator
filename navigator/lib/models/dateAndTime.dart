@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class DateAndTime 
 {
   final int day;
@@ -34,6 +36,11 @@ class DateAndTime
     return '$y-$m-$d'
            'T$h:$min'
            '$tzSign$tzH:$tzM';
+  }
+
+  factory DateAndTime.fromDateTimeAndTime(DateTime date, TimeOfDay time)
+  {
+    return DateAndTime(day: date.day, month: date.month, year: date.year, hour: time.hour, minute: time.minute, timeZoneHourShift: 0, timeZoneMinuteShift: 0);
   }
 
 }

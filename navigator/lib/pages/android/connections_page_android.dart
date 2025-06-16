@@ -44,13 +44,15 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   void initState() {
     super.initState();
     //Initializers
-    updateLocationWithCurrentPosition(widget.page.from);
+    updateLocationWithCurrentPosition();
     _fromFocusNode = FocusNode();
     _toFocusNode = FocusNode();
     _toController = TextEditingController(text: widget.page.to?.name);
     _fromController = TextEditingController();
     _selectedTime = TimeOfDay.now();
     _selectedDate = DateTime.now();
+    _searchResultsFrom = [];
+    _searchResultsTo = [];
 
     _fromFocusNode.addListener(() {
       if (!_fromFocusNode.hasFocus) {
@@ -125,9 +127,15 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   //async to Sync functions
-  Future<void> updateLocationWithCurrentPosition(Location l) async {
-    l = await widget.page.services.getCurrentLocation();
+  Future<void> updateLocationWithCurrentPosition() async {
+  try {
+    _selectedPosition = await Geolocator.getCurrentPosition();
+    // Update the from location if needed
+    widget.page.from = await widget.page.services.getCurrentLocation();
+  } catch (e) {
+    print('Error getting location: $e');
   }
+}
 
   Future<void> getSearchResults(String query, bool from) async {
     final results = await widget.page.services.getLocations(query);
@@ -558,29 +566,31 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     {
       return CircularProgressIndicator();
     }
-    return ListView.builder(
-      key: const ValueKey('list'),
-      padding: EdgeInsets.all(8),
-      itemCount: _currentJourneys!.length,
-      itemBuilder: (context, i)
-      {
-        final r = _currentJourneys![i];
-        return Padding(padding: EdgeInsets.all(8), child: Column(children: [
-          Row(children: [
-            Column(
-              children: [
-                Text(r.legs[0].departure),
-                Text(r.legs[0].plannedDeparture)
-              ],
-            ),
-            Icon(Icons.arrow_forward),
-            Column(children: [
-              Text(r.legs.last.arrival),
-              Text(r.legs.last.plannedArrival),
+    return Expanded(
+      child: ListView.builder(
+        key: const ValueKey('list'),
+        padding: EdgeInsets.all(8),
+        itemCount: _currentJourneys!.length,
+        itemBuilder: (context, i)
+        {
+          final r = _currentJourneys![i];
+          return Padding(padding: EdgeInsets.all(8), child: Column(children: [
+            Row(children: [
+              Column(
+                children: [
+                  Text(r.legs[0].departure),
+                  Text(r.legs[0].plannedDeparture)
+                ],
+              ),
+              Icon(Icons.arrow_forward),
+              Column(children: [
+                Text(r.legs.last.arrival),
+                Text(r.legs.last.plannedArrival),
+              ],)
             ],)
-          ],)
-        ],),);
-      }
+          ],),);
+        }
+      ),
     );
   }
 
@@ -662,7 +672,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               ),
             ),
             FilledButton.tonalIcon(
-              onPressed: _fetchJourneysFromCurrentLocation,
+              onPressed: () => getJourneys(widget.page.from.id, widget.page.to.id, widget.page.from.latitude, widget.page.from.longitude, widget.page.to.latitude, widget.page.to.longitude, DateAndTime.fromDateTimeAndTime(_selectedDate, _selectedTime), departure),
               label: Text('Search'),
               icon: Icon(Icons.search),
             ),

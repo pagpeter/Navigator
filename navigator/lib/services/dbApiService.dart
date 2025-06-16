@@ -167,8 +167,9 @@ class dbApiService {
         print('Response body: ${response.body}');
         throw Exception('Failed to load journeys: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Exception in fetchJourneysByLocation: $e');
+      print('Stack trace: $stackTrace');
       rethrow;
     }
   }

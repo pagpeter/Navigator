@@ -1,6 +1,6 @@
 import 'package:navigator/models/location.dart';
 
-class Station extends Location{
+class Station extends Location {
   final bool nationalExpress;
   final bool national;
   final bool regional;
@@ -27,31 +27,74 @@ class Station extends Location{
     required this.ferry,
     required this.subway,
     required this.tram,
-    required this.taxi
+    required this.taxi,
   });
 
-  factory Station.empty()
-  {
-    return Station(bus: false, ferry: false, id: '', latitude: 0, longitude: 0, name: '', national: false, nationalExpress: false, regional: false, regionalExpress: false, suburban: false, subway: false, taxi: false, tram: false, type: '');
+  factory Station.empty() {
+    return Station(
+      type: '',
+      id: '',
+      name: '',
+      latitude: 0,
+      longitude: 0,
+      nationalExpress: false,
+      national: false,
+      regional: false,
+      regionalExpress: false,
+      suburban: false,
+      bus: false,
+      ferry: false,
+      subway: false,
+      tram: false,
+      taxi: false,
+    );
   }
 
   factory Station.fromJson(Map<String, dynamic> json) {
+
+    final location = json['location'];
+    final products = json['products'];
+
     return Station(
-      type: json['type'],
-      id: json['id'],
-      name: json['name'],
-      latitude: json['location']['latitude'],
-      longitude: json['location']['longitude'],
-      nationalExpress: json['products']['nationalExpress'],
-      national: json['products']['national'],
-      regional: json['products']['regional'],
-      regionalExpress: json['products']['regionalExpress'],
-      suburban: json['products']['suburban'],
-      bus: json['products']['bus'],
-      ferry: json['products']['ferry'],
-      subway: json['products']['subway'],
-      tram: json['products']['tram'],
-      taxi: json['products']['taxi']
+      type: json['type'] ?? '',
+      id: json['id'] ?? location?['id'] ?? '',  // 👈 fallback if id is null
+      name: json['name'] ?? '',
+      latitude: location?['latitude'] ?? json['latitude'] ?? 0.0,
+      longitude: location?['longitude'] ?? json['longitude'] ?? 0.0,
+      nationalExpress: products?['nationalExpress'] ?? false,
+      national: products?['national'] ?? false,
+      regional: products?['regional'] ?? false,
+      regionalExpress: products?['regionalExpress'] ?? false,
+      suburban: products?['suburban'] ?? false,
+      bus: products?['bus'] ?? false,
+      ferry: products?['ferry'] ?? false,
+      subway: products?['subway'] ?? false,
+      tram: products?['tram'] ?? false,
+      taxi: products?['taxi'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'id': id,
+      'name': name,
+      'location': {
+        'latitude': latitude,
+        'longitude': longitude,
+      },
+      'products': {
+        'nationalExpress': nationalExpress,
+        'national': national,
+        'regional': regional,
+        'regionalExpress': regionalExpress,
+        'suburban': suburban,
+        'bus': bus,
+        'ferry': ferry,
+        'subway': subway,
+        'tram': tram,
+        'taxi': taxi,
+      },
+    };
   }
 }

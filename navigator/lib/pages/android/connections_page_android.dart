@@ -536,55 +536,65 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       itemBuilder: (context, i) {
         final r = _currentJourneys![i];
         return Card(
+          clipBehavior: Clip.hardEdge,
+          shadowColor: Colors.transparent,
           color: Theme.of(context).colorScheme.secondaryContainer,
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium,),
-                        Text(r.legs[0].plannedDepartureDateTime.hour.toString() + ':' + r.legs[0].plannedDepartureDateTime.minute.toString(), 
-                             style: Theme.of(context).textTheme.labelSmall),
-                      ],
-                    ),
-                    Icon(Icons.arrow_forward),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(r.legs.last.arrivalDateTime.hour.toString() + ':' + r.legs.last.arrivalDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium),
-                        Text(r.legs.last.plannedArrivalDateTime.hour.toString() + ':' + r.legs.last.plannedArrivalDateTime.minute.toString(),
-                             style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text(r.legs.last.arrivalDateTime.difference(r.legs[0].departureDateTime).inMinutes.toString(), style: Theme.of(context).textTheme.titleMedium),
-                        Text(r.legs.last.plannedArrivalDateTime.difference(r.legs[0].plannedDepartureDateTime).inMinutes.toString())
-                      ],
-                    )
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(child: _buildModeLine(context, r)),
-                    Row(
-                      children: [
-                        Text((r.legs.length - 2).toString()),
-                    Icon(Icons.transfer_within_a_station),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(children: [
-                  Text('Leave in: ' + (r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes.toString())),
-                ],)
-
-              ],
+          child: InkWell(
+            onTap:() {
+              Navigator.push(context,
+              MaterialPageRoute(
+                builder: (context) => JourneyPageAndroid(JourneyPage(journey: r)),
+              ));
+            },
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium,),
+                          Text(r.legs[0].plannedDepartureDateTime.hour.toString() + ':' + r.legs[0].plannedDepartureDateTime.minute.toString(), 
+                               style: Theme.of(context).textTheme.labelSmall),
+                        ],
+                      ),
+                      Icon(Icons.arrow_forward),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(r.legs.last.arrivalDateTime.hour.toString() + ':' + r.legs.last.arrivalDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium),
+                          Text(r.legs.last.plannedArrivalDateTime.hour.toString() + ':' + r.legs.last.plannedArrivalDateTime.minute.toString(),
+                               style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(r.legs.last.arrivalDateTime.difference(r.legs[0].departureDateTime).inMinutes.toString(), style: Theme.of(context).textTheme.titleMedium),
+                          Text(r.legs.last.plannedArrivalDateTime.difference(r.legs[0].plannedDepartureDateTime).inMinutes.toString())
+                        ],
+                      )
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: _buildModeLine(context, r)),
+                      Row(
+                        children: [
+                          Text((r.legs.length - 2).toString()),
+                      Icon(Icons.transfer_within_a_station),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(children: [
+                    Text('Leave in: ' + (r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes.toString())),
+                  ],)
+            
+                ],
+              ),
             ),
           ),
         );

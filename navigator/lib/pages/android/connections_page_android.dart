@@ -29,7 +29,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   late TimeOfDay _selectedTime;
   late DateTime _selectedDate;
   late Position _selectedPosition;
-  late List<Journey> _currentJourneys;
+  List<Journey>? _currentJourneys;
   late List<Location> _searchResultsFrom;
   late List<Location> _searchResultsTo;
   String _lastSearchedText = '';
@@ -315,6 +315,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               if (searching) _buildSearchResults(context, searchingFrom),
 
               if (!searching) _buildJourneys(context),
+
             ],
           ),
         ),
@@ -500,6 +501,14 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
 
   Widget _buildSearchResults(BuildContext context, bool searchingFrom) {
     if (searchingFrom) {
+      if(_searchResultsFrom == null)
+      {
+        return CircularProgressIndicator();
+      }
+      if(_searchResultsFrom.isEmpty)
+      {
+        return CircularProgressIndicator();
+      }
       return ListView.builder(
         key: const ValueKey('list'),
         padding: const EdgeInsets.all(8),
@@ -515,6 +524,14 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         },
       );
     } else {
+      if(_searchResultsTo == null)
+      {
+        return CircularProgressIndicator();
+      }
+      if(_searchResultsTo.isEmpty)
+      {
+        return CircularProgressIndicator();
+      }
       return ListView.builder(
         key: const ValueKey('list'),
         padding: const EdgeInsets.all(8),
@@ -533,19 +550,37 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildJourneys(BuildContext context) {
-    return Column(
-      children: [
-        ElevatedButton(
-          child: Text('Debug to get to journeys page'),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  JourneyPageAndroid(JourneyPage(journey: Journey(legs: []))),
+    if(_currentJourneys == null)
+    {
+      return CircularProgressIndicator();
+    }
+    if(_currentJourneys!.isEmpty)
+    {
+      return CircularProgressIndicator();
+    }
+    return ListView.builder(
+      key: const ValueKey('list'),
+      padding: EdgeInsets.all(8),
+      itemCount: _currentJourneys!.length,
+      itemBuilder: (context, i)
+      {
+        final r = _currentJourneys![i];
+        return Padding(padding: EdgeInsets.all(8), child: Column(children: [
+          Row(children: [
+            Column(
+              children: [
+                Text(r.legs[0].departure),
+                Text(r.legs[0].plannedDeparture)
+              ],
             ),
-          ),
-        ),
-      ],
+            Icon(Icons.arrow_forward),
+            Column(children: [
+              Text(r.legs.last.arrival),
+              Text(r.legs.last.plannedArrival),
+            ],)
+          ],)
+        ],),);
+      }
     );
   }
 

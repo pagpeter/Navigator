@@ -575,7 +575,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   ],
                 ),
                 Row(children: [
-                  Text('Departure in: ' + (r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes.toString())),
+                  Text('Departure in: ' + (r.legs[0].departureDateTime.toLocal().difference(DateTime.now()).inMinutes.toString())),
                 ],)
 
               ],

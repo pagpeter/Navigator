@@ -1,1 +1,4 @@
 .idea/
+
+#Environment Files
+.env

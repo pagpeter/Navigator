@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    # Set environment variables for the job
+    env:
+      API_URL: ${{ secrets.API_URL }}
+    
     steps:
     # Checkout the repository code
     - name: Checkout repository
@@ -34,6 +38,21 @@ jobs:
       run: |
         cd navigator
         flutter pub get
+    
+    - name: Generate code
+      run: |
+        cd navigator
+        dart run build_runner build --delete-conflicting-outputs
+      env:
+        API_URL: ${{ secrets.API_URL }}
+    
+    # Generate code (for env.g.dart and other generated files)
+    - name: Generate code
+      run: |
+        cd navigator
+        dart run build_runner build --delete-conflicting-outputs
+      env:
+        API_URL: ${{ secrets.API_URL }}
     
     # Run tests
     - name: Run tests
@@ -75,6 +94,10 @@ jobs:
   # Separate job for iOS build (runs on macOS)
   build-ios:
     runs-on: macos-latest
+    
+    # Set environment variables for iOS job too
+    env:
+      API_URL: ${{ secrets.API_URL }}
     
     steps:
     - name: Checkout repository

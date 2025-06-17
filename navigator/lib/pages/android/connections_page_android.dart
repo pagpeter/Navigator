@@ -556,18 +556,27 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(r.legs[0].departureDateTime.hour.toString() + ':' + r.legs[0].departureDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium,),
-                          Text(r.legs[0].plannedDepartureDateTime.hour.toString() + ':' + r.legs[0].plannedDepartureDateTime.minute.toString(), 
-                               style: Theme.of(context).textTheme.labelSmall),
+                          Text(
+                            '${r.legs[0].departureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].departureDateTime.minute.toString().padLeft(2, '0')}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text(
+                              '${r.legs[0].plannedDepartureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].plannedDepartureDateTime.minute.toString().padLeft(2, '0')}',
+                              style: Theme.of(context).textTheme.labelSmall),
                         ],
                       ),
                       Icon(Icons.arrow_forward),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(r.legs.last.arrivalDateTime.hour.toString() + ':' + r.legs.last.arrivalDateTime.minute.toString(), style: Theme.of(context).textTheme.titleMedium),
-                          Text(r.legs.last.plannedArrivalDateTime.hour.toString() + ':' + r.legs.last.plannedArrivalDateTime.minute.toString(),
-                               style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text(
+                              '${r.legs.last.arrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.arrivalDateTime.minute.toString().padLeft(2, '0')}',
+                              style: Theme.of(context).textTheme.titleMedium
+                          ),
+                          Text(
+                              '${r.legs.last.plannedArrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.plannedArrivalDateTime.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey)
+                          ),
                         ],
                       ),
                       Column(

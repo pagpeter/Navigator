@@ -26,8 +26,8 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.8.1'  # Use consistent Flutter version
-        channel: 'stable'
+        channel: 'stable'  # Use latest stable version (includes Dart 3.8.1+)
+        cache: true  # Enable caching for faster builds
     
     # Get Flutter dependencies
     - name: Get dependencies
@@ -83,8 +83,8 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.8.1'  # Use same Flutter version as Android job
-        channel: 'stable'
+        channel: 'stable'  # Use latest stable version (includes Dart 3.8.1+)
+        cache: true
     
     - name: Get dependencies
       run: |

@@ -1,0 +1,104 @@
+name: Flutter Build
+
+on:
+  push:
+    branches: [ main ]  # Trigger on pushes to main branch
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Checkout the repository code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # Setup Java (required for Android builds)
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+    
+    # Setup Flutter
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.8.1'  # Specify your Flutter version
+        channel: 'stable'
+    
+    # Navigate to Flutter project directory
+    - name: Navigate to Flutter project
+      run: cd navigator
+    
+    # Get Flutter dependencies
+    - name: Get dependencies
+      run: |
+        cd navigator
+        flutter pub get
+    
+    # Run tests
+    - name: Run tests
+      run: |
+        cd navigator
+        flutter test
+    
+    # Analyze code
+    - name: Analyze code
+      run: |
+        cd navigator
+        flutter analyze
+    
+    # Build APK for Android
+    - name: Build APK
+      run: |
+        cd navigator
+        flutter build apk --release
+    
+    # Build App Bundle for Android (recommended for Play Store)
+    - name: Build App Bundle
+      run: |
+        cd navigator
+        flutter build appbundle --release
+    
+    # Upload build artifacts
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk
+        path: navigator/build/app/outputs/flutter-apk/app-release.apk
+    
+    - name: Upload App Bundle
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-bundle
+        path: navigator/build/app/outputs/bundle/release/app-release.aab
+
+  # Separate job for iOS build (runs on macOS)
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.8.1'
+        channel: 'stable'
+    
+    - name: Get dependencies
+      run: |
+        cd navigator
+        flutter pub get
+    
+    - name: Build iOS (no code signing)
+      run: |
+        cd navigator
+        flutter build ios --release --no-codesign
+    
+    # Note: For signed iOS builds, you'll need to configure code signing
+    # which requires additional setup with certificates and provisioning profiles

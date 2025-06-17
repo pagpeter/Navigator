@@ -295,11 +295,11 @@ class _HomePageAndroidState extends State<HomePageAndroid>
       child: Scaffold(
         backgroundColor: colors.surfaceVariant,
         body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 200),
           transitionBuilder: (child, anim) 
           {
             final offsetAnimation = Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
+              begin: const Offset(0.0, 1.0),
               end: Offset.zero
             ).animate(anim);
             return SlideTransition(position: offsetAnimation, child: child);

@@ -4,16 +4,20 @@ import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/subway_line.dart';
 
 class Overpassapi {
-  Future<List<SubwayLine>> fetchSubwayLinesWithColors() async {
-    const query = '''
+  Future<List<SubwayLine>> fetchSubwayLinesWithColors({
+    required double lat,
+    required double lon,
+    required int radius
+  }) async {
+    final query = '''
 [out:json][timeout:60];
-area["name"="Berlin"]->.a;
+// Query around the specified coordinates (default: Berlin)
 (
-  relation["route"="subway"](area.a);
-  relation["route"="light_rail"](area.a);
-  relation["route"="tram"](area.a);
-  relation["route"="ferry"](area.a);
-  relation["route"="funicular"](area.a);
+  relation["route"="subway"](around:$radius, $lat, $lon);
+  relation["route"="light_rail"](around:$radius, $lat, $lon);
+  relation["route"="tram"](around:$radius, $lat, $lon);
+  relation["route"="ferry"](around:$radius, $lat, $lon);
+  relation["route"="funicular"](around:$radius, $lat, $lon);
 )->.r;
 .r >> -> .x;
 .x out geom;
@@ -31,8 +35,12 @@ area["name"="Berlin"]->.a;
   }
 
   // Keep the old method for backward compatibility
-  Future<List<List<LatLng>>> fetchSubwayLines() async {
-    final subwayLines = await fetchSubwayLinesWithColors();
+  Future<List<List<LatLng>>> fetchSubwayLines({
+    required double lat,
+    required double lon,
+    required int radius
+  }) async {
+    final subwayLines = await fetchSubwayLinesWithColors(lat: lat, lon: lon, radius: radius);
     return subwayLines.map((line) => line.points).toList();
   }
 

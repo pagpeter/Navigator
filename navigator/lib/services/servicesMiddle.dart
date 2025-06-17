@@ -64,13 +64,21 @@ class ServicesMiddle {
       return myApp.Location(type: '', id: '', name: '', latitude: 0, longitude: 0);
     }
   }
-
-    Future<void> refreshPolylines() async {
+  
+  Future<void> refreshPolylines() async {
     print("🔄 Starting refreshPolylines... Instance: ${this.hashCode}");
-    
-    loadedSubwayLines = await overpass.fetchSubwayLinesWithColors();
+
+    // Get current location
+    myApp.Location currentLocation = await getCurrentLocation();
+
+    // Fetch subway lines based on user's location with 50 km radius
+    loadedSubwayLines = await overpass.fetchSubwayLinesWithColors(
+      lat: currentLocation.latitude,
+      lon: currentLocation.longitude,
+      radius: 50000 // 50 km in meters
+    );
+
     print("Fetched ${loadedSubwayLines.length} subway lines with colors");
-    
     print("✅ Set loadedSubwayLines to ${loadedSubwayLines.length} lines. Instance: ${this.hashCode}");
   }
 }

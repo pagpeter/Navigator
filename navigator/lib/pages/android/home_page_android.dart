@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:navigator/models/location.dart';
 import 'package:navigator/pages/android/connections_page_android.dart';
@@ -48,11 +49,16 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   List<Polyline> _ferryLines = [];
   bool showFunicular = false;
   List<Polyline> _funicularLines = [];
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
 
   @override
   void initState() {
     super.initState();
     initiateLines();
+
+    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionStreamController = StreamController<double?>();
 
     _controller.addListener(() {
       _onSearchChanged(_controller.text.trim());
@@ -81,8 +87,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 2.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -95,8 +101,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 2.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -109,8 +115,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 2.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -123,8 +129,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 2.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -137,8 +143,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
             //   (subwayLine) => Polyline(
             //     points: subwayLine.points,
             //     strokeWidth: 1.0,
-            //     color: subwayLine.color, 
-            //     borderColor: subwayLine.color.withAlpha(60)  
+            //     color: subwayLine.color,
+            //     borderColor: subwayLine.color.withAlpha(60)
             //     // Use the actual line color!
             //   ),
             // )
@@ -151,8 +157,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
             //   (subwayLine) => Polyline(
             //     points: subwayLine.points,
             //     strokeWidth: 1.0,
-            //     color: subwayLine.color, 
-            //     borderColor: subwayLine.color.withAlpha(60)  
+            //     color: subwayLine.color,
+            //     borderColor: subwayLine.color.withAlpha(60)
             //     // Use the actual line color!
             //   ),
             // )
@@ -165,8 +171,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 1.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -179,8 +185,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               (subwayLine) => Polyline(
                 points: subwayLine.points,
                 strokeWidth: 2.0,
-                color: subwayLine.color, 
-                borderColor: subwayLine.color.withAlpha(60)  
+                color: subwayLine.color,
+                borderColor: subwayLine.color.withAlpha(60)
                 // Use the actual line color!
               ),
             )
@@ -269,6 +275,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _alignPositionStreamController.close();
     super.dispose();
   }
 
@@ -296,7 +303,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
         backgroundColor: colors.surfaceVariant,
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
-          transitionBuilder: (child, anim) 
+          transitionBuilder: (child, anim)
           {
             final offsetAnimation = Tween<Offset>(
               begin: const Offset(0.0, 1.0),
@@ -331,9 +338,12 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                   options: MapOptions(
                     initialCenter: _currentUserLocation ?? _currentCenter,
                     initialZoom: _currentZoom,
-                    onPositionChanged: (position, hasGesture) {
-                      _currentCenter = position.center;
-                      _currentZoom = position.zoom;
+                    onPositionChanged: (MapCamera camera, bool hasGesture) {
+                      if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
+                        setState(
+                              () => _alignPositionOnUpdate = AlignOnUpdate.never,
+                        );
+                      }
                     },
                   ),
                   children: [
@@ -341,6 +351,43 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                       urlTemplate:
                           'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.example.app',
+                    ),
+                    CurrentLocationLayer(
+                      alignPositionStream: _alignPositionStreamController.stream,
+                      alignPositionOnUpdate: _alignPositionOnUpdate,
+                      style: LocationMarkerStyle(
+                        marker: DefaultLocationMarker(
+                          color: colors.primary,
+                        ),
+                        markerSize: const Size(20, 20),
+                        markerDirection: MarkerDirection.heading,
+                        accuracyCircleColor: colors.primary.withValues(alpha: 0.1),
+                        headingSectorColor: colors.primary.withValues(alpha: 0.8),
+                        headingSectorRadius: 60,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 20.0, bottom: 116.0),
+                        child: FloatingActionButton(
+                          shape: const CircleBorder(),
+                          onPressed: () {
+                            // Align the location marker to the center of the map widget
+                            // on location update until user interact with the map.
+                            setState(
+                                  () => _alignPositionOnUpdate = AlignOnUpdate.always,
+                            );
+                            // Align the location marker to the center of the map widget
+                            // and zoom the map to level 18.
+                            _alignPositionStreamController.add(18);
+                          },
+                          child: Icon(
+                            Icons.my_location,
+                            color: colors.tertiary.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
                     ),
                     if(showSubway)
                     PolylineLayer(polylines: _subwayLines),
@@ -542,7 +589,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
     );
   }
 
-  
+
 
   Widget _stationResult(BuildContext context, Station station) {
     final theme = Theme.of(context);

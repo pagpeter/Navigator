@@ -300,7 +300,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
         return true; // allow actual back navigation if no results
       },
       child: Scaffold(
-        backgroundColor: colors.surfaceVariant,
+        backgroundColor: colors.surfaceContainerHighest,
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           transitionBuilder: (child, anim)
@@ -334,18 +334,26 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                   ),
                 )
               : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _currentUserLocation ?? _currentCenter,
-                    initialZoom: _currentZoom,
-                    onPositionChanged: (MapCamera camera, bool hasGesture) {
-                      if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
-                        setState(
-                              () => _alignPositionOnUpdate = AlignOnUpdate.never,
-                        );
-                      }
-                    },
-                  ),
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _currentUserLocation ?? _currentCenter,
+              initialZoom: _currentZoom,
+              minZoom: 3.0,
+              maxZoom: 18.0,
+              interactionOptions: InteractionOptions(
+                flags: InteractiveFlag.drag | InteractiveFlag.flingAnimation | InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.rotate,
+                rotationThreshold: 20.0,  // Higher threshold to make rotation less sensitive
+                pinchZoomThreshold: 0.5,  // Adjust zoom sensitivity
+                pinchMoveThreshold: 40.0, // Higher threshold to reduce accidental moves while pinching
+              ),
+              onPositionChanged: (MapCamera camera, bool hasGesture) {
+                if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
+                  setState(
+                        () => _alignPositionOnUpdate = AlignOnUpdate.never,
+                  );
+                }
+              },
+            ),
                   children: [
                     TileLayer(
                       urlTemplate:
@@ -357,12 +365,12 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                       alignPositionOnUpdate: _alignPositionOnUpdate,
                       style: LocationMarkerStyle(
                         marker: DefaultLocationMarker(
-                          color: colors.primary,
+                          color: Colors.lightBlue[800]!,
                         ),
                         markerSize: const Size(20, 20),
                         markerDirection: MarkerDirection.heading,
-                        accuracyCircleColor: colors.primary.withValues(alpha: 0.1),
-                        headingSectorColor: colors.primary.withValues(alpha: 0.8),
+                        accuracyCircleColor: Colors.blue[200]!.withAlpha(0x20),
+                        headingSectorColor: Colors.blue[400]!.withAlpha(0x90),
                         headingSectorRadius: 60,
                       ),
                     ),

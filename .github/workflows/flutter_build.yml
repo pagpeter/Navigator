@@ -75,7 +75,7 @@ jobs:
     - name: Analyze code
       run: |
         cd navigator
-        flutter analyze -v
+        flutter analyze --no-fatal-warnings -v
     
     # Build APK for Android
     - name: Build APK

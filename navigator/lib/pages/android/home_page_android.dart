@@ -296,8 +296,14 @@ class _HomePageAndroidState extends State<HomePageAndroid>
         backgroundColor: colors.surfaceVariant,
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
-          transitionBuilder: (child, anim) =>
-              FadeTransition(opacity: anim, child: child),
+          transitionBuilder: (child, anim) 
+          {
+            final offsetAnimation = Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero
+            ).animate(anim);
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
           child: hasResults
               ? SafeArea(
                   child: ListView.builder(
@@ -352,7 +358,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     PolylineLayer(polylines: _funicularLines)
                   ],
                 ),
-        ),
+              ),
         bottomSheet: Material(
           color: colors.surfaceContainer,
           elevation: 8,

@@ -650,13 +650,26 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                   }
                 },
                 label: Text(
-                  _selectedDate.day.toString() +
-                      '.' +
-                      _selectedDate.month.toString() +
-                      '.' +
-                      _selectedDate.year.toString(),
+                  '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
                 ),
               ),
+            ),
+            // Reset button
+            IconButton.filledTonal(
+              onPressed: () {
+                setState(() {
+                  _selectedTime = TimeOfDay.now();
+                  _selectedDate = DateTime.now();
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Reset to current date and time'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: Icon(Icons.refresh),
+              tooltip: 'Reset to now',
             ),
             IconButton.filledTonal(
               onPressed: () => {},

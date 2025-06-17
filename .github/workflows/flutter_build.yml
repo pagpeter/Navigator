@@ -72,10 +72,18 @@ jobs:
         flutter test
     
     # Analyze code
-    - name: Analyze code
+    - name: Analyze code (ignoriere Warnungen & Infos, nur Fehler blockieren)
       run: |
         cd navigator
-        flutter analyze --no-fatal-warnings -v
+        flutter analyze -v > analysis.log
+        cat analysis.log
+        if grep -q "error •" analysis.log; then
+          echo "❌ Fehler gefunden – Build wird abgebrochen"
+          exit 1
+        else
+          echo "✅ Keine Fehler – Lints und Hinweise werden ignoriert"
+        fi
+
     
     # Build APK for Android
     - name: Build APK

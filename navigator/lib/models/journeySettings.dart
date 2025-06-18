@@ -8,6 +8,10 @@ class JourneySettings {
   bool? tram;
   bool? bus;
   bool? ferry;
+  bool? deutschlandTicketConnectionsOnly;
+  bool? accessibility;
+  String? walkingSpeed;
+  int? transferTime;
 
   JourneySettings({
     this.nationalExpress = true,
@@ -19,6 +23,10 @@ class JourneySettings {
     this.tram = true,
     this.bus = true,
     this.ferry = true,
+    this.deutschlandTicketConnectionsOnly = false,
+    this.accessibility = false,
+    this.walkingSpeed = 'normal',
+    this.transferTime = null,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +40,10 @@ class JourneySettings {
       'tram': tram,
       'bus': bus,
       'ferry': ferry,
+      'deutschlandTicketConnectionsOnly': deutschlandTicketConnectionsOnly,
+      'accessibility': accessibility,
+      'walkingSpeed': walkingSpeed,
+      'transferTime': transferTime,
     };
   }
 }

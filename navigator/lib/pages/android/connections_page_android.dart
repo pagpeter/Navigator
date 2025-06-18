@@ -13,6 +13,8 @@ import 'package:geocoding/geocoding.dart' as geo;
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 
+import '../../models/journeySettings.dart';
+
 class ConnectionsPageAndroid extends StatefulWidget {
   final ConnectionsPage page;
 
@@ -39,6 +41,18 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   bool departure = true;
   bool searching = false;
   bool searchingFrom = true;
+
+  JourneySettings journeySettings = JourneySettings(
+    nationalExpress: true,
+    national: true,
+    regionalExpress: true,
+    regional: true,
+    suburban: true,
+    subway: true,
+    tram: true,
+    bus: true,
+    ferry: true,
+  );
 
   @override
   void initState() {
@@ -189,6 +203,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       to,
       when,
       departure,
+      journeySettings: journeySettings,
     );
 
     print('Received ${journeys.length} journeys');
@@ -260,6 +275,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       to,
       when,
       departure,
+      journeySettings: journeySettings,
     );
 
     setState(() {
@@ -618,6 +634,10 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildButtons(BuildContext context) {
+
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Column(
       children: [
         Row(
@@ -681,8 +701,134 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               tooltip: 'Reset to now',
             ),
             IconButton.filledTonal(
-              onPressed: () => {},
+              onPressed: () async {
+                final updatedSettings = await showDialog<JourneySettings>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    // Make a local copy so changes don't affect original until "Apply"
+                    JourneySettings tempSettings = JourneySettings(
+                      national: journeySettings.national,
+                      nationalExpress: journeySettings.nationalExpress,
+                      regional: journeySettings.regional,
+                      regionalExpress: journeySettings.regionalExpress,
+                      suburban: journeySettings.suburban,
+                      subway: journeySettings.subway,
+                      tram: journeySettings.tram,
+                      bus: journeySettings.bus,
+                      ferry: journeySettings.ferry,
+                    );
+
+                    return AlertDialog(
+                      title: Text('Journey Preferences', style: TextStyle(color: colors.primary)),
+                      content: StatefulBuilder(
+                        builder: (context, setState) {
+                          return SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CheckboxListTile(
+                                  title: Text('Include ICE', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.national ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.national = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include IC/EC', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.nationalExpress ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.nationalExpress = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include RE/RB', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.regional ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.regional = value;
+                                      tempSettings.regionalExpress = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include S-Bahn', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.suburban ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.suburban = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include U-Bahn', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.subway ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.subway = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include Tram', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.tram ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.tram = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include Bus', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.bus ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.bus = value;
+                                    });
+                                  },
+                                ),
+                                CheckboxListTile(
+                                  title: Text('Include Ferry', style: TextStyle(color: colors.primary)),
+                                  value: tempSettings.ferry ?? true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      tempSettings.ferry = value;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(), // Cancel
+                          child: Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(tempSettings); // Return updated settings
+                          },
+                          child: Text('Apply'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                // If user pressed Apply and returned settings, update state
+                if (updatedSettings != null) {
+                  setState(() {
+                    journeySettings = updatedSettings;
+                  });
+                }
+              },
               icon: Icon(Icons.settings),
+              tooltip: 'Journey Settings',
             ),
           ],
         ),

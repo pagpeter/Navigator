@@ -9,6 +9,8 @@ import 'package:navigator/services/geoLocator.dart';
 import 'package:navigator/services/overpassApi.dart';
 import 'package:navigator/models/subway_line.dart';
 
+import '../models/journeySettings.dart';
+
 class ServicesMiddle {
   // Singleton implementation
   static final ServicesMiddle _instance = ServicesMiddle._internal();
@@ -49,8 +51,8 @@ class ServicesMiddle {
     }
   }
 
-  Future<List<Journey>> getJourneys(myApp.Location from, myApp.Location to, DateAndTime when, bool departure) async {
-    final results = await dbRest.fetchJourneysByLocation(from, to, when, departure);
+  Future<List<Journey>> getJourneys(myApp.Location from, myApp.Location to, DateAndTime when, bool departure, {required JourneySettings journeySettings}) async {
+    final results = await dbRest.fetchJourneysByLocation(from, to, when, departure, journeySettings!);
     print("Journeys fetched: " + results.length.toString());
     return results;
   }

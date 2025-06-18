@@ -10,7 +10,7 @@ class TileRenderer {
 
 
   /// Converts all polylines to lists of pixel-space (x, y) tuples
-  List<List<(double, double)>> polylinesToRaster(List<Polyline> lines, int zoom) {
+  List<List<(double, double)>> polylinesToWebMercator(List<Polyline> lines, int zoom) {
     List<List<(double, double)>> convertedLines = [];
 
     for (final line in lines) {
@@ -70,7 +70,7 @@ void drawPolylinesToTile({
         continue;
       }
 
-      drawLine(img, x1: localX1, y1: localY1, x2:localX2, y2:localY2, color: ColorRgba8(0, 0, 0, 0));
+      drawLine(img, x1: localX1, y1: localY1, x2:localX2, y2:localY2, color: ColorRgba8(0, 0, 0, 0), antialias: true);
     }
   }
 
@@ -85,4 +85,6 @@ bool _lineIntersectsTile(int x1, int y1, int x2, int y2, int size) {
   final maxY = max(y1, y2);
   return maxX >= 0 && minX < size && maxY >= 0 && minY < size;
 }
+
+
 }

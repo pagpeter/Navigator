@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/models/journey.dart';
+import 'package:navigator/models/journeySettings.dart';
 import 'package:navigator/models/location.dart';
 import 'package:navigator/models/station.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +17,7 @@ class dbApiService {
       Location to,
       DateAndTime when,
       bool departure,
+      JourneySettings? journeySettings,
       ) async {
     final queryParams = <String, String>{};
 
@@ -71,6 +73,14 @@ class dbApiService {
     } else {
       queryParams['arrival'] = timeParam;
     }
+
+    // Add Settings parameters
+    final serviceParams = journeySettings?.toJson();
+    serviceParams?.forEach((key, value) {
+      if (value != null) {
+        queryParams[key] = value.toString();
+      }
+    });
 
     queryParams['results'] = '3';
 

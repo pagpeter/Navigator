@@ -489,37 +489,65 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Planned Departure Time
                           Text(
-                            '${r.legs[0].departureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].departureDateTime.minute.toString().padLeft(2, '0')}',
+                            '${r.legs[0].plannedDepartureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].plannedDepartureDateTime.minute.toString().padLeft(2, '0')}',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
+                          // Actual Departure Time
                           Text(
-                              '${r.legs[0].plannedDepartureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].plannedDepartureDateTime.minute.toString().padLeft(2, '0')}',
-                              style: Theme.of(context).textTheme.labelSmall),
+                            '${r.legs[0].departureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].departureDateTime.minute.toString().padLeft(2, '0')}',
+                            style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                              color: r.legs[0].departureDateTime != r.legs[0].plannedDepartureDateTime
+                                  ? Colors.redAccent[400]
+                                  : Theme.of(context).textTheme.labelSmall!.color,
+                            ),
+                          ),
                         ],
                       ),
                       Icon(Icons.arrow_forward),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
+                          // Planned Arrival Time
                           Text(
-                              '${r.legs.last.arrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.arrivalDateTime.minute.toString().padLeft(2, '0')}',
-                              style: Theme.of(context).textTheme.titleMedium
+                            '${r.legs.last.plannedArrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.plannedArrivalDateTime.minute.toString().padLeft(2, '0')}',
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
+                          // Actual Arrival Time
                           Text(
-                              '${r.legs.last.plannedArrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.plannedArrivalDateTime.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey)
+                            '${r.legs.last.arrivalDateTime.hour.toString().padLeft(2, '0')}:${r.legs.last.arrivalDateTime.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: r.legs.last.arrivalDateTime != r.legs.last.plannedArrivalDateTime
+                                  ? Colors.redAccent[400]
+                                  : Theme.of(context).textTheme.labelSmall!.color,
+                            ),
                           ),
                         ],
                       ),
                       Column(
                         children: [
-                          Text(r.legs.last.arrivalDateTime.difference(r.legs[0].departureDateTime).inMinutes.toString(), style: Theme.of(context).textTheme.titleMedium),
-                          Text(r.legs.last.plannedArrivalDateTime.difference(r.legs[0].plannedDepartureDateTime).inMinutes.toString())
+                          // Planned Duration
+                          Text(
+                            r.legs.last.plannedArrivalDateTime
+                                .difference(r.legs[0].plannedDepartureDateTime)
+                                .inMinutes
+                                .toString(),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          // Actual Duration
+                          Text(
+                            r.legs.last.arrivalDateTime
+                                .difference(r.legs[0].departureDateTime)
+                                .inMinutes
+                                .toString(),
+                          ),
                         ],
-                      )
+                      ),
                     ],
                   ),
+
                   Row(
                     children: [
                       Expanded(child: _buildModeLine(context, r)),

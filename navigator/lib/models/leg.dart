@@ -132,12 +132,12 @@ DateTime get arrivalDateTime {
 }
 
 DateTime get plannedDepartureDateTime {
-  final parsed = DateTime.parse(departure);
+  final parsed = DateTime.parse(plannedDeparture);
   return parsed.isUtc ? parsed.toLocal() : parsed;
 }
 
 DateTime get plannedArrivalDateTime {
-  final parsed = DateTime.parse(arrival);
+  final parsed = DateTime.parse(plannedArrival);
   return parsed.isUtc ? parsed.toLocal() : parsed;
 }
 

@@ -286,18 +286,11 @@ class TileRenderer {
   
   void _drawLabels(Image img, List<LabelPlacement> labels) {
     for (final label in labels) {
+      drawString(img, label.text, font: arial14, x: label.x.round(), y: label.y.round());
       // For now, this is a placeholder - you'd need to implement actual text rendering
       // You might want to use a package like 'bitmap_font' or render text to a separate layer
       
       // Draw a simple text background rectangle as placeholder
-      final bgColor = ColorRgba8(255, 255, 255, 200);
-      fillRect(img, 
-        x1: (label.x - label.width / 2).round(),
-        y1: (label.y - label.height / 2).round(),
-        x2: (label.x + label.width / 2).round(),
-        y2: (label.y + label.height / 2).round(),
-        color: bgColor
-      );
       
       // TODO: Add actual text rendering here
       // You'll need to either:

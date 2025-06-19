@@ -24,46 +24,45 @@ Color parseColorFromString(String? colorString) {
   }
 
   // Remove # if present
-  String cleanColor = colorString.replaceAll('#', '');
-  
+  String cleanColor = colorString.replaceAll('#', '').toLowerCase();
+
+  // First, handle named colors
+  switch (cleanColor) {
+    case 'red':
+      return Colors.red;
+    case 'blue':
+      return Colors.blue;
+    case 'green':
+      return Colors.green;
+    case 'yellow':
+      return Colors.yellow;
+    case 'orange':
+      return Colors.orange;
+    case 'purple':
+      return Colors.purple;
+    case 'brown':
+      return Colors.brown;
+    case 'pink':
+      return Colors.pink;
+    case 'cyan':
+      return Colors.cyan;
+    case 'lime':
+      return Colors.lime;
+  }
+
   try {
     // Handle 3-digit hex (e.g., "f00" -> "ff0000")
     if (cleanColor.length == 3) {
       cleanColor = cleanColor.split('').map((c) => c + c).join();
     }
-    
+
     // Handle 6-digit hex
     if (cleanColor.length == 6) {
       return Color(int.parse('FF$cleanColor', radix: 16));
     }
-    
-    // Handle named colors (you can extend this)
-    switch (cleanColor.toLowerCase()) {
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'yellow':
-        return Colors.yellow;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return Colors.purple;
-      case 'brown':
-        return Colors.brown;
-      case 'pink':
-        return Colors.pink;
-      case 'cyan':
-        return Colors.cyan;
-      case 'lime':
-        return Colors.lime;
-      default:
-        return Colors.purple; // Fallback
-    }
   } catch (e) {
     print('Failed to parse color: $colorString, using default');
-    return Colors.purple; // Fallback on error
   }
+
+  return Colors.purple; // Fallback on error
 }

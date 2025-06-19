@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/Icon/Train_Station_Icon.svg
     - assets/Images/image.png
+    - assets/Tiles/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

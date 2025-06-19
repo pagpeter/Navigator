@@ -44,25 +44,50 @@ class Leg {
   });
 
   factory Leg.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely get string values
+    String safeGetString(dynamic value) {
+      if (value == null) return '';
+      return value.toString();
+    }
+
+    // Helper function to safely get nested string values
+    String safeGetNestedString(Map<String, dynamic>? parent, String key) {
+      if (parent == null) return '';
+      final value = parent[key];
+      if (value == null) return '';
+      return value.toString();
+    }
+
+    // Safe station parsing
+    Station safeGetStation(dynamic stationJson) {
+      if (stationJson == null) return Station.empty();
+      try {
+        return Station.fromJson(stationJson);
+      } catch (e) {
+        print('Error parsing station: $e');
+        return Station.empty();
+      }
+    }
+
     return Leg(
-      tripID: json['tripId'],
-      direction: json['direction'],
-      origin: Station.fromJson(json['origin']),
-      departure: json['departure'],
-      plannedDeparture: json['plannedDeparture'],
-      departureDelay: json['departureDelay']?.toString(),
-      departurePlatform: json['departurePlatform'],
-      plannedDeparturePlatform: json['plannedDeparturePlatform'],
-      destination: Station.fromJson(json['destination']),
-      arrival: json['arrival'],
-      plannedArrival: json['plannedArrival'],
-      arrivalDelay: json['arrivalDelay']?.toString(),
-      arrivalPlatform: json['arrivalPlatform'],
-      plannedArrivalPlatform: json['plannedArrivalPlatform'],
+      tripID: safeGetString(json['tripId']),
+      direction: safeGetNestedString(json['line'], 'direction'),
+      origin: safeGetStation(json['origin']),
+      departure: safeGetString(json['departure']),
+      plannedDeparture: safeGetString(json['plannedDeparture']),
+      departureDelay: safeGetString(json['departureDelay']),
+      departurePlatform: safeGetString(json['departurePlatform']),
+      plannedDeparturePlatform: safeGetString(json['plannedDeparturePlatform']),
+      destination: safeGetStation(json['destination']),
+      arrival: safeGetString(json['arrival']),
+      plannedArrival: safeGetString(json['plannedArrival']),
+      arrivalDelay: safeGetString(json['arrivalDelay']),
+      arrivalPlatform: safeGetString(json['arrivalPlatform']),
+      plannedArrivalPlatform: safeGetString(json['plannedArrivalPlatform']),
       isWalking: json['walking'],
       distance: json['distance'],
-      lineName: json['line']?['name'],
-      productName: json['line']?['productName'],
+      lineName: safeGetNestedString(json['line'], 'name'),
+      productName: safeGetNestedString(json['line'], 'productName'),
     );
   }
 

@@ -92,84 +92,15 @@ class dbApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        
+
         // Check if journeys key exists and is not null
         if (data['journeys'] == null) {
           print('No journeys found in response');
           return [];
         }
-        
-        final journeysJson = data['journeys'] as List;
 
-        return journeysJson.map<Journey>((journeyJson) {
-          if (journeyJson == null || journeyJson['legs'] == null) {
-            print('Invalid journey data: $journeyJson');
-            return Journey(legs: []);
-          }
-          
-          final legsJson = journeyJson['legs'] as List;
-
-          List<Leg> legs = legsJson.map<Leg>((legJson) {
-            if (legJson == null) {
-              print('Invalid leg data: null');
-              return Leg(
-                tripID: '',
-                direction: '',
-                origin: Station.empty(),
-                departure: '',
-                plannedDeparture: '',
-                departureDelay: '',
-                departurePlatform: '',
-                plannedDeparturePlatform: '',
-                destination: Station.empty(),
-                arrival: '',
-                plannedArrival: '',
-                arrivalDelay: '',
-                arrivalPlatform: '',
-                plannedArrivalPlatform: '',
-              );
-            }
-
-            final originJson = legJson['origin'];
-            final destinationJson = legJson['destination'];
-
-            final origin = originJson != null ? Station.fromJson(originJson) : Station.empty();
-            final destination = destinationJson != null ? Station.fromJson(destinationJson) : Station.empty();
-
-            // Helper function to safely get string values
-            String safeGetString(dynamic value) {
-              if (value == null) return '';
-              return value.toString();
-            }
-
-            // Helper function to safely get nested string values
-            String safeGetNestedString(Map<String, dynamic>? parent, String key) {
-              if (parent == null) return '';
-              final value = parent[key];
-              if (value == null) return '';
-              return value.toString();
-            }
-
-            return Leg(
-              tripID: safeGetString(legJson['tripId']),
-              direction: safeGetNestedString(legJson['line'], 'direction'),
-              origin: origin,
-              departure: safeGetString(legJson['departure']),
-              plannedDeparture: safeGetString(legJson['plannedDeparture']),
-              departureDelay: safeGetString(legJson['departureDelay']),
-              departurePlatform: safeGetString(legJson['departurePlatform']),
-              plannedDeparturePlatform: safeGetString(legJson['plannedDeparturePlatform']),
-              destination: destination,
-              arrival: safeGetString(legJson['arrival']),
-              plannedArrival: safeGetString(legJson['plannedArrival']),
-              arrivalDelay: safeGetString(legJson['arrivalDelay']),
-              arrivalPlatform: safeGetString(legJson['arrivalPlatform']),
-              plannedArrivalPlatform: safeGetString(legJson['plannedArrivalPlatform']),
-            );
-          }).toList();
-
-          return Journey(legs: legs);
-        }).toList();
+        // Use the parseAndSort method to parse and sort journeys by actual departure time
+        return Journey.parseAndSort(data['journeys']);
       } else {
         print('HTTP Error: ${response.statusCode}');
         print('Response body: ${response.body}');
@@ -195,33 +126,33 @@ class dbApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         print('Locations response: ${jsonEncode(data)}');
-        
+
         return (data as List)
             .where((item) => item != null && (
-                (item['id'] != null && item['id'].toString().toLowerCase() != 'null') || 
+            (item['id'] != null && item['id'].toString().toLowerCase() != 'null') ||
                 (item['type'] != 'station' && item['latitude'] != null && item['longitude'] != null)
-            ))
+        ))
             .map<Location>((item) {
-              try {
-                if (item['type'] == 'station' || item['type'] == 'stop') {
-                  return Station.fromJson(item);
-                } else {
-                  return Location.fromJson(item);
-                }
-              } catch (e) {
-                print('Error parsing location item: $e');
-                print('Item: $item');
-                // Return a basic location to avoid breaking the entire list
-                return Location(
-                  id: item['id']?.toString() ?? '',
-                  name: item['name']?.toString() ?? 'Unknown',
-                  type: item['type']?.toString() ?? 'unknown',
-                  latitude: item['location']?['latitude']?.toDouble() ?? item['latitude']?.toDouble(),
-                  longitude: item['location']?['longitude']?.toDouble() ?? item['longitude']?.toDouble(),
-                  address: null,
-                );
-              }
-            }).toList();
+          try {
+            if (item['type'] == 'station' || item['type'] == 'stop') {
+              return Station.fromJson(item);
+            } else {
+              return Location.fromJson(item);
+            }
+          } catch (e) {
+            print('Error parsing location item: $e');
+            print('Item: $item');
+            // Return a basic location to avoid breaking the entire list
+            return Location(
+              id: item['id']?.toString() ?? '',
+              name: item['name']?.toString() ?? 'Unknown',
+              type: item['type']?.toString() ?? 'unknown',
+              latitude: item['location']?['latitude']?.toDouble() ?? item['latitude']?.toDouble(),
+              longitude: item['location']?['longitude']?.toDouble() ?? item['longitude']?.toDouble(),
+              address: null,
+            );
+          }
+        }).toList();
       } else {
         throw Exception('Failed to load locations: ${response.statusCode}');
       }

@@ -71,7 +71,7 @@ class Leg {
 
     return Leg(
       tripID: safeGetString(json['tripId']),
-      direction: safeGetNestedString(json['line'], 'direction'),
+      direction: safeGetString(json['direction']),
       origin: safeGetStation(json['origin']),
       departure: safeGetString(json['departure']),
       plannedDeparture: safeGetString(json['plannedDeparture']),
@@ -109,7 +109,7 @@ class Leg {
       'plannedArrivalPlatform': plannedArrivalPlatform,
       'walking': isWalking,
       'distance': distance,
-      'line': lineName != null ? {
+      'line': lineName != null || productName != null ? {
         'name': lineName,
         'productName': productName,
       } : null,
@@ -133,7 +133,11 @@ class Leg {
   }
 
   // Helper method to check if there are delays
-  bool get hasDelays => departureDelay != null || arrivalDelay != null;
+  bool get hasDelays {
+    final depDelay = departureDelay != null ? int.tryParse(departureDelay!) ?? 0 : 0;
+    final arrDelay = arrivalDelay != null ? int.tryParse(arrivalDelay!) ?? 0 : 0;
+    return depDelay > 0 || arrDelay > 0;
+  }
 
   // Helper method to get delay in minutes
   int? get departureDelayMinutes {

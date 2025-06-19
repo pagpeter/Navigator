@@ -473,12 +473,16 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           shadowColor: Colors.transparent,
           color: Theme.of(context).colorScheme.secondaryContainer,
           child: InkWell(
-            onTap:() {
-              Navigator.push(context,
-              MaterialPageRoute(
-                builder: (context) => JourneyPageAndroid(JourneyPage(journey: r)),
-              ));
-            },
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => JourneyPageAndroid(
+                      JourneyPage(journey: r), journey: r, // `r` is a single Journey object
+                    ),
+                  ),
+                );
+              },
             child: Padding(
               padding: EdgeInsets.all(16),
               child: Column(

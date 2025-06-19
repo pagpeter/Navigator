@@ -597,6 +597,19 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     context: context,
                     initialTime: _selectedTime,
                     helpText: 'Select Departure or Arrival Time',
+                    builder: (BuildContext context, Widget? child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          timePickerTheme: TimePickerThemeData(
+                            helpTextStyle: TextStyle(
+                              color: colors.onSurface, // Use a high-contrast color
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
                   if (time != null) {
                     setState(() {

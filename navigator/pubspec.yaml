@@ -46,6 +46,7 @@ dependencies:
   flutter_map_location_marker: ^10.1.0
   latlng: ^2.0.7
   image: ^4.5.4
+  scidart: ^0.0.2-dev.12
 
 
 dev_dependencies:

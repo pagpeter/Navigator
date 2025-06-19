@@ -1,5 +1,4 @@
 import 'package:navigator/models/location.dart';
-import 'package:navigator/services/geoLocator.dart';
 import 'package:navigator/services/servicesMiddle.dart';
 
 class ConnectionsPage 

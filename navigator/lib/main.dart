@@ -49,7 +49,6 @@ class MyApp extends StatelessWidget {
       outlineVariant: Color(MaterialDynamicColors.outlineVariant.getArgb(scheme)),
       surface: Color(MaterialDynamicColors.surface.getArgb(scheme)),
       onSurface: Color(MaterialDynamicColors.onSurface.getArgb(scheme)),
-      surfaceVariant: Color(MaterialDynamicColors.surfaceVariant.getArgb(scheme)),
       onSurfaceVariant: Color(MaterialDynamicColors.onSurfaceVariant.getArgb(scheme)),
       inverseSurface: Color(MaterialDynamicColors.inverseSurface.getArgb(scheme)),
       onInverseSurface: Color(MaterialDynamicColors.inverseOnSurface.getArgb(scheme)),

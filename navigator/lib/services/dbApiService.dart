@@ -29,42 +29,40 @@ class dbApiService {
     }
 
     // FROM handling
-    if ((from.type == 'station' || from.type == 'stop') && (from.id?.isNotEmpty ?? false)) {
-      queryParams['from'] = from.id!;
-    } else if (from.latitude != null && from.longitude != null) {
-      queryParams['from.latitude'] = from.latitude.toString();
-      queryParams['from.longitude'] = from.longitude.toString();
-
-      try {
-        final placemarks = await geo.placemarkFromCoordinates(from.latitude!, from.longitude!);
-        if (placemarks.isNotEmpty) {
-          queryParams['from.address'] = buildAddress(placemarks.first);
-        }
-      } catch (e) {
-        print('Error getting address for from location: $e');
-      }
+    if ((from.type == 'station' || from.type == 'stop') && (from.id.isNotEmpty)) {
+      queryParams['from'] = from.id;
     } else {
-      throw Exception('Invalid "from" location: missing id or coordinates');
+      queryParams['from.latitude'] = from.latitude.toString();
     }
+    queryParams['from.longitude'] = from.longitude.toString();
+
+    try {
+      final placemarks = await geo.placemarkFromCoordinates(from.latitude, from.longitude);
+      if (placemarks.isNotEmpty) {
+        queryParams['from.address'] = buildAddress(placemarks.first);
+      }
+    } catch (e) {
+      print('Error getting address for from location: $e');
+    }
+
 
     // TO handling
-    if ((to.type == 'station' || to.type == 'stop') && (to.id?.isNotEmpty ?? false)) {
-      queryParams['to'] = to.id!;
-    } else if (to.latitude != null && to.longitude != null) {
-      queryParams['to.latitude'] = to.latitude.toString();
-      queryParams['to.longitude'] = to.longitude.toString();
-
-      try {
-        final placemarks = await geo.placemarkFromCoordinates(to.latitude!, to.longitude!);
-        if (placemarks.isNotEmpty) {
-          queryParams['to.address'] = buildAddress(placemarks.first);
-        }
-      } catch (e) {
-        print('Error getting address for to location: $e');
-      }
+    if ((to.type == 'station' || to.type == 'stop') && (to.id.isNotEmpty)) {
+      queryParams['to'] = to.id;
     } else {
-      throw Exception('Invalid "to" location: missing id or coordinates');
+      queryParams['to.latitude'] = to.latitude.toString();
     }
+    queryParams['to.longitude'] = to.longitude.toString();
+
+    try {
+      final placemarks = await geo.placemarkFromCoordinates(to.latitude, to.longitude);
+      if (placemarks.isNotEmpty) {
+        queryParams['to.address'] = buildAddress(placemarks.first);
+      }
+    } catch (e) {
+      print('Error getting address for to location: $e');
+    }
+
 
     // Time handling
     final timeParam = when.ISO8601String();

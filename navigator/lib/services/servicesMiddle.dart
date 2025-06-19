@@ -1,7 +1,6 @@
 import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/services/dbApiService.dart';
-import 'package:navigator/models/station.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/location.dart' as myApp;
 import 'package:geocoding/geocoding.dart' as geo;
@@ -52,8 +51,8 @@ class ServicesMiddle {
   }
 
   Future<List<Journey>> getJourneys(myApp.Location from, myApp.Location to, DateAndTime when, bool departure, {required JourneySettings journeySettings}) async {
-    final results = await dbRest.fetchJourneysByLocation(from, to, when, departure, journeySettings!);
-    print("Journeys fetched: " + results.length.toString());
+    final results = await dbRest.fetchJourneysByLocation(from, to, when, departure, journeySettings);
+    print("Journeys fetched: ${results.length}");
     return results;
   }
 

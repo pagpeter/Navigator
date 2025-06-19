@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:navigator/models/journey.dart';
@@ -9,7 +8,6 @@ import 'package:navigator/models/location.dart';
 import 'package:navigator/models/station.dart';
 import 'package:navigator/pages/android/journey_page_android.dart';
 import 'package:navigator/pages/page_models/connections_page.dart';
-import 'package:geocoding/geocoding.dart' as geo;
 import 'package:navigator/models/dateAndTime.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 
@@ -65,7 +63,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     updateLocationWithCurrentPosition();
     _fromFocusNode = FocusNode();
     _toFocusNode = FocusNode();
-    _toController = TextEditingController(text: widget.page.to?.name);
+    _toController = TextEditingController(text: widget.page.to.name);
     _fromController = TextEditingController();
     _selectedTime = TimeOfDay.now();
     _selectedDate = DateTime.now();
@@ -129,20 +127,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     });
   }
 
-  String _buildAddressString(String city, String street) {
-    final safeCity = city.trim();
-    final safeStreet = street.trim();
-
-    if (safeCity.isNotEmpty && safeStreet.isNotEmpty) {
-      return '$safeCity, $safeStreet';
-    } else if (safeCity.isNotEmpty) {
-      return safeCity;
-    } else if (safeStreet.isNotEmpty) {
-      return safeStreet;
-    } else {
-      return '';
-    }
-  }
 
   //async to Sync functions
   Future<void> updateLocationWithCurrentPosition() async {
@@ -188,8 +172,8 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       id: fromId,
       latitude: fromLat,
       longitude: fromLon,
-      name: widget.page.from?.name ?? "From Location",
-      type: widget.page.from?.type ?? "geo",
+      name: widget.page.from.name,
+      type: widget.page.from.type,
       address: null,
     );
 
@@ -197,8 +181,8 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
       id: toId,
       latitude: toLat,
       longitude: toLong,
-      name: widget.page.to?.name ?? "To Location", 
-      type: widget.page.to?.type ?? "geo",
+      name: widget.page.to.name,
+      type: widget.page.to.type,
       address: null,
     );
 
@@ -223,69 +207,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 }
 
-  Future<void> _fetchJourneysFromCurrentLocation() async {
-    if (_selectedPosition == null) return;
-
-    final now = DateTime.now();
-    final tzOffset = now.timeZoneOffset;
-
-    final when = DateAndTime(
-      day: _selectedDate.day,
-      month: _selectedDate.month,
-      year: _selectedDate.year,
-      hour: _selectedTime.hour,
-      minute: _selectedTime.minute,
-      timeZoneHourShift: tzOffset.inHours,
-      timeZoneMinuteShift: tzOffset.inMinutes % 60,
-    );
-
-    String? fromAddress;
-    try {
-      final placemarks = await geo.placemarkFromCoordinates(
-        _selectedPosition!.latitude,
-        _selectedPosition!.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        final city = placemark.locality ?? '';
-        final street = placemark.street ?? '';
-        fromAddress = _buildAddressString(city, street);
-      }
-    } catch (e) {
-      print('Failed to get address for current location: $e');
-      fromAddress = null;
-    }
-
-    final from = Location(
-      id: '',
-      latitude: _selectedPosition!.latitude,
-      longitude: _selectedPosition!.longitude,
-      name: 'Current Location',
-      type: 'geo',
-      address: fromAddress,
-    );
-
-    final to = Location(
-      id: widget.page.to.id,
-      latitude: widget.page.to.latitude,
-      longitude: widget.page.to.longitude,
-      name: widget.page.to.name,
-      type: widget.page.to.type,
-      address: null,
-    );
-
-    final journeys = await widget.page.services.getJourneys(
-      from,
-      to,
-      when,
-      departure,
-      journeySettings: journeySettings,
-    );
-
-    setState(() {
-      _currentJourneys = journeys;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +233,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+        backgroundColor: colors.surfaceContainerHighest,
         destinations: [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
@@ -493,10 +414,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
 
   Widget _buildSearchResults(BuildContext context, bool searchingFrom) {
     if (searchingFrom) {
-      if(_searchResultsFrom == null)
-      {
-        return CircularProgressIndicator();
-      }
       if(_searchResultsFrom.isEmpty)
       {
         return CircularProgressIndicator();
@@ -516,10 +433,6 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
         },
       );
     } else {
-      if(_searchResultsTo == null)
-      {
-        return CircularProgressIndicator();
-      }
       if(_searchResultsTo.isEmpty)
       {
         return CircularProgressIndicator();
@@ -619,7 +532,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     ],
                   ),
                   Row(children: [
-                    Text('Leave in: ' + (r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes.toString())),
+                    Text('Leave in: ${r.legs[0].departureDateTime.difference(DateTime.now()).inMinutes}'),
                   ],)
             
                 ],
@@ -654,7 +567,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 onPressed: () async {
                   final time = await showTimePicker(
                     context: context,
-                    initialTime: _selectedTime ?? TimeOfDay.now(),
+                    initialTime: _selectedTime,
                     helpText: 'Select Departure or Arrival Time',
                   );
                   if (time != null) {
@@ -673,7 +586,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                     context: context,
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
-                    initialDate: _selectedDate ?? DateTime.now(),
+                    initialDate: _selectedDate,
                     helpText: 'Select Departure Or Arrival Date',
                   );
                   if (date != null) {
@@ -1004,18 +917,13 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 print('From: ${widget.page.from}');
                 print('To: ${widget.page.to}');
                 
-                if (widget.page.from == null || widget.page.to == null) {
-                  print('ERROR: from or to is null');
-                  return;
-                }
-                
                 await getJourneys(
-                  widget.page.from.id ?? '',
-                  widget.page.to.id ?? '',
-                  widget.page.from.latitude ?? 0.0,
-                  widget.page.from.longitude ?? 0.0,
-                  widget.page.to.latitude ?? 0.0,
-                  widget.page.to.longitude ?? 0.0,
+                  widget.page.from.id,
+                  widget.page.to.id,
+                  widget.page.from.latitude,
+                  widget.page.from.longitude,
+                  widget.page.to.latitude,
+                  widget.page.to.longitude,
                   DateAndTime.fromDateTimeAndTime(_selectedDate, _selectedTime),
                   departure
                 );

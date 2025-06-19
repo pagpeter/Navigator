@@ -1,7 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:navigator/services/geoLocator.dart';
-
 
 class Location {
   final String type;

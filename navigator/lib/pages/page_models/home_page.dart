@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:navigator/models/location.dart';
 import 'package:navigator/pages/android/home_page_android.dart';
 import 'package:navigator/pages/ios/home_page_ios.dart';
@@ -8,7 +7,6 @@ import 'package:navigator/pages/macos/home_page_macos.dart';
 import 'package:navigator/pages/web/home_page_web.dart';
 import 'package:navigator/pages/windows/home_page_windows.dart';
 import 'package:navigator/services/servicesMiddle.dart';
-import 'package:navigator/models/station.dart';
 
 class HomePage extends StatelessWidget
 {

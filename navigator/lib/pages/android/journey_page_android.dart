@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/leg.dart';
+import 'dart:developer';
 
 class JourneyPageAndroid extends StatefulWidget {
   final JourneyPage page;
@@ -120,29 +121,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
         return Column(
           children: [
             _buildLeg(context, leg, index, journey.legs),
-            if (!isLast) ...[
-              if (leg.arrivalPlatformEffective.isNotEmpty &&
-                  journey.legs[index + 1].departurePlatformEffective.isNotEmpty &&
-                  leg.arrivalPlatformEffective != journey.legs[index + 1].departurePlatformEffective)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.compare_arrows, color: Colors.orange, size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Platform change: ${leg.arrivalPlatformEffective} → ${journey.legs[index + 1].departurePlatformEffective}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.orange,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               _buildConnection(context),
             ]
-          ],
         );
       },
     );
@@ -158,11 +138,18 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
     if (leg.isWalking == true && index > 0 && index < legs.length - 1) {
       final prevLeg = legs[index - 1];
       final nextLeg = legs[index + 1];
+
+      log('Prev Leg Arrival Platform: ${prevLeg.arrivalPlatformEffective}');
+      log('Next Leg Departure Platform: ${nextLeg.departurePlatformEffective}');
+
       if (prevLeg.arrivalPlatformEffective.isNotEmpty &&
           nextLeg.departurePlatformEffective.isNotEmpty &&
           prevLeg.arrivalPlatformEffective != nextLeg.departurePlatformEffective) {
         platformChangeText =
-        'Platform change: ${prevLeg.arrivalPlatformEffective} → ${nextLeg.departurePlatformEffective}';
+        'Platform change: ${prevLeg.arrivalPlatformEffective} to ${nextLeg.departurePlatformEffective}';
+        log('Platform Change Detected: $platformChangeText');
+      } else {
+        log('No Platform Change Detected');
       }
     }
     
@@ -212,36 +199,50 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                   ),
                 ),
               const SizedBox(width: 12),
-              if (leg.direction != null && leg.direction!.isNotEmpty)
-                Expanded(
-                  child: Row(
-                    children: [
-                      if (leg.isWalking == true && platformChangeText != null)
-                        Expanded(
-                          child: Text(
-                            platformChangeText,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      else if (leg.direction != null && leg.direction!.isNotEmpty)
-                        Expanded(
-                          child: Text(
-                            leg.direction!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                              fontSize: 13,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+              Expanded(
+                child: leg.isWalking == true && platformChangeText != null
+                    ? Row(
+                  children: [
+                    Text(
+                      platformChangeText.split(' to ')[0],
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        Icons.arrow_forward,
+                        size: 14,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        platformChangeText.split(' to ')[1],
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
-                    ],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                )
+                    : leg.direction != null && leg.direction!.isNotEmpty
+                    ? Text(
+                  leg.direction!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 13,
                   ),
-                ),
+                  overflow: TextOverflow.ellipsis,
+                )
+                    : SizedBox.shrink(),
+              ),
               if (hasDelay && leg.isWalking != true)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -24,6 +24,7 @@ class Leg {
   final String? lineName;
   final String? productName;
 
+
   Leg({
     this.tripID,
     this.direction,

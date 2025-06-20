@@ -10,6 +10,8 @@ import 'package:navigator/models/leg.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 import 'dart:convert';
 
+import '../../services/overpassApi.dart';
+
 class JourneyPageAndroid extends StatefulWidget {
   final JourneyPage page;
   final Journey journey;
@@ -691,24 +693,19 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildPolylineLayer() {
-    // Extract route points from all legs' polylines
-    final List<LatLng> routePoints = _extractRoutePointsFromLegs();
+    // Get the colored polylines by leg
+    final List<Polyline> polylines = _extractPolylinesByLeg();
 
-    if (routePoints.isEmpty) {
-      print("DEBUG: No route points found in legs' polyline data");
+    if (polylines.isEmpty) {
+      print("DEBUG: No polylines created for journey legs");
       return const SizedBox.shrink();
     }
 
-    print("DEBUG: Found ${routePoints.length} route points from legs");
+    print("DEBUG: Created ${polylines.length} polylines for journey legs");
 
+    // Return the PolylineLayer with all our colored polylines
     return PolylineLayer(
-      polylines: [
-        Polyline(
-          points: routePoints,
-          color: Colors.blue,
-          strokeWidth: 4.0,
-        ),
-      ],
+      polylines: polylines,
     );
   }
 
@@ -807,5 +804,119 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     final minutes = (duration.inSeconds / 60).ceil();
 
     return minutes <= 0 ? '1min' : '${minutes}min';
+  }
+// Add this as a class field
+  final Map<String, Color> _transitLineColorCache = {};
+
+  List<Polyline> _extractPolylinesByLeg() {
+    List<Polyline> polylines = [];
+    final Map<String, Color> modeColors = {
+      'train': const Color(0xFF9C27B0),  // Purple for trains
+      'subway': const Color(0xFF0075BF),  // Blue for subway/metro
+      'tram': const Color(0xFFE4000F),    // Red for trams
+      'bus': const Color(0xFF9A258F),     // Magenta for buses
+      'ferry': const Color(0xFF0098D8),   // Light blue for ferries
+      'walking': Colors.grey,             // Grey for walking
+      'default': Colors.blue,             // Default blue
+    };
+
+    try {
+      for (int i = 0; i < widget.journey.legs.length; i++) {
+        final leg = widget.journey.legs[i];
+        if (leg.polyline == null) continue;
+
+        final List<LatLng> legPoints = _extractPointsFromLegPolyline(leg.polyline);
+        if (legPoints.isEmpty) continue;
+
+        // Determine color based on transit info
+        Color lineColor;
+
+        if (leg.isWalking == true) {
+          lineColor = modeColors['walking']!;
+        } else {
+          // Create a cache key using available properties
+          final String cacheKey = '${leg.lineName ?? ''}-${leg.productName ?? ''}';
+          String productType = leg.productName?.toLowerCase() ?? 'default';
+
+          // Use cached color if available, otherwise use product-specific color
+          lineColor = _transitLineColorCache[cacheKey] ??
+              modeColors[productType] ??
+              modeColors['default']!;
+
+          // If not in cache yet, schedule async lookup but don't wait for it
+          if (!_transitLineColorCache.containsKey(cacheKey) &&
+              leg.lineName != null &&
+              leg.lineName!.isNotEmpty &&
+              legPoints.isNotEmpty) {
+
+            LatLng centerPoint = legPoints[legPoints.length ~/ 2];
+            final overpass = Overpassapi();
+
+            // Start the async call but don't block polyline creation
+            overpass.getTransitLineColor(
+                lat: centerPoint.latitude,
+                lon: centerPoint.longitude,
+                lineName: leg.lineName!,
+                mode: leg.productName
+            ).then((color) {
+              if (mounted && color != null) {
+                setState(() {
+                  _transitLineColorCache[cacheKey] = color as Color;
+                  // The setState will trigger rebuild with the new colors
+                });
+              }
+            });
+          }
+        }
+
+        final double strokeWidth = leg.isWalking == true ? 3.0 : 4.0;
+
+        polylines.add(
+          Polyline(
+            points: legPoints,
+            color: lineColor,
+            strokeWidth: strokeWidth,
+            pattern: leg.isWalking == true ? StrokePattern.dotted() : StrokePattern.solid(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error creating polylines: $e');
+    }
+
+    return polylines;
+  }
+
+  List<LatLng> _extractPointsFromLegPolyline(dynamic polylineData) {
+    List<LatLng> points = [];
+
+    try {
+      final Map<String, dynamic> geoJson = polylineData is Map<String, dynamic>
+          ? polylineData
+          : jsonDecode(polylineData);
+
+      if (geoJson['type'] == 'FeatureCollection' && geoJson['features'] is List) {
+        final List features = geoJson['features'];
+
+        for (final feature in features) {
+          if (feature['geometry'] != null &&
+              feature['geometry']['type'] == 'Point' &&
+              feature['geometry']['coordinates'] is List) {
+
+            final List coords = feature['geometry']['coordinates'];
+
+            if (coords.length >= 2) {
+              final double lng = coords[0] is double ? coords[0] : double.parse(coords[0].toString());
+              final double lat = coords[1] is double ? coords[1] : double.parse(coords[1].toString());
+              points.add(LatLng(lat, lng));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing leg polyline points: $e');
+    }
+
+    return points;
   }
 }

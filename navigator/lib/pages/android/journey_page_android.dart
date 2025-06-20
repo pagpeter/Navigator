@@ -16,11 +16,8 @@ class JourneyPageAndroid extends StatefulWidget {
   final JourneyPage page;
   final Journey journey;
 
-  const JourneyPageAndroid(
-      this.page, {
-        Key? key,
-        required this.journey,
-      }) : super(key: key);
+  const JourneyPageAndroid(this.page, {Key? key, required this.journey})
+    : super(key: key);
 
   @override
   State<JourneyPageAndroid> createState() => _JourneyPageAndroidState();
@@ -30,7 +27,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     with SingleTickerProviderStateMixin {
   // Sheet controller for the draggable bottom sheet
   final DraggableScrollableController _sheetController =
-  DraggableScrollableController();
+      DraggableScrollableController();
 
   // Sheet size constants
   static const double _minChildSize = 0.1;
@@ -47,7 +44,6 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   late StreamController<LocationMarkerPosition> _locationStreamController;
   late StreamController<LocationMarkerHeading> _headingStreamController;
   StreamSubscription<Position>? _geolocatorSubscription;
-
 
   @override
   void initState() {
@@ -98,32 +94,33 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     _headingStreamController = StreamController<LocationMarkerHeading>();
 
     // Note: A production app should handle location permissions.
-    _geolocatorSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 1,
-      ),
-    ).listen((Position position) {
-      final locationMarkerPosition = LocationMarkerPosition(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        accuracy: position.accuracy,
-      );
+    _geolocatorSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 1,
+          ),
+        ).listen((Position position) {
+          final locationMarkerPosition = LocationMarkerPosition(
+            latitude: position.latitude,
+            longitude: position.longitude,
+            accuracy: position.accuracy,
+          );
 
-      final locationMarkerHeading = LocationMarkerHeading(
-        heading: position.heading * math.pi / 180,
-        accuracy: position.headingAccuracy * math.pi / 180,
-      );
+          final locationMarkerHeading = LocationMarkerHeading(
+            heading: position.heading * math.pi / 180,
+            accuracy: position.headingAccuracy * math.pi / 180,
+          );
 
-      _handleLocationUpdate(locationMarkerPosition);
+          _handleLocationUpdate(locationMarkerPosition);
 
-      if (!_locationStreamController.isClosed) {
-        _locationStreamController.add(locationMarkerPosition);
-      }
-      if (!_headingStreamController.isClosed) {
-        _headingStreamController.add(locationMarkerHeading);
-      }
-    });
+          if (!_locationStreamController.isClosed) {
+            _locationStreamController.add(locationMarkerPosition);
+          }
+          if (!_headingStreamController.isClosed) {
+            _headingStreamController.add(locationMarkerHeading);
+          }
+        });
   }
 
   void _handleLocationUpdate(LocationMarkerPosition position) {
@@ -154,47 +151,48 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
-        children: [
-          _buildMapView(context),
-          _buildDraggableSheet(context),
-        ],
+        children: [_buildMapView(context), _buildDraggableSheet(context)],
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
   Widget _buildDraggableSheet(BuildContext context) {
-    return DraggableScrollableSheet(
-      controller: _sheetController,
-      initialChildSize: _initialChildSize,
-      minChildSize: _minChildSize,
-      maxChildSize: _maxChildSize,
-      snap: true,
-      snapSizes: const [0.1, 0.4, 0.6, 1],
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                spreadRadius: 0,
-                offset: const Offset(0, -2),
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        controller: _sheetController,
+        initialChildSize: _initialChildSize,
+        minChildSize: _minChildSize,
+        maxChildSize: _maxChildSize,
+        snap: true,
+        snapSizes: const [0.1, 0.4, 0.6, 1],
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _buildSheetHandle(context),
-              Expanded(
-                child: _buildJourneyContent(context, scrollController),
-              ),
-            ],
-          ),
-        );
-      },
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _buildSheetHandle(context),
+                Expanded(
+                  child: _buildJourneyContent(context, scrollController),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -207,15 +205,17 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           onVerticalDragUpdate: (details) {
             final fractionDelta =
                 details.primaryDelta! / MediaQuery.of(context).size.height;
-            final newSize = (_sheetController.size - fractionDelta)
-                .clamp(_minChildSize, _maxChildSize);
+            final newSize = (_sheetController.size - fractionDelta).clamp(
+              _minChildSize,
+              _maxChildSize,
+            );
             _sheetController.jumpTo(newSize);
           },
           child: Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.outline,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -226,7 +226,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildJourneyContent(
-      BuildContext context, ScrollController scrollController) {
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
     final journey = widget.journey;
 
     if (journey.legs.isEmpty) {
@@ -243,7 +245,12 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
         return Column(
           children: [
-            _buildLegCard(context, leg, index, journey.legs),
+            if (leg.isWalking == true)
+              _buildWalkingLegCard(context, leg, index, journey.legs),
+            if (_getPlatformChangeText(leg, index, journey.legs) != null)
+              _buildInterChangeCard(context, leg, index, journey.legs),
+            if(!(leg.isWalking == true))
+              _buildLegCard(context, leg, index, journey.legs),
             if (!isLast) _buildConnectionLine(context),
           ],
         );
@@ -251,8 +258,102 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     );
   }
 
+  Widget _buildInterChangeCard(
+    BuildContext context,
+    Leg leg,
+    int index,
+    List<Leg> legs,
+  ) {
+    return Container();
+  }
+
+  Widget _buildWalkingLegCard(
+  BuildContext context,
+  Leg leg,
+  int index,
+  List<Leg> legs,
+) {
+  if (leg.distance == null || leg.distance == 0) {
+    return const SizedBox.shrink();
+  }
+  return Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: Theme.of(context).colorScheme.outline),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.directions_walk,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildDurationChip(context, leg),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_right,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  leg.destination.name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () => {},
+                icon: Icon(Icons.map),
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              _formatTime(leg.departureDateTime),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _formatTime(leg.arrivalDateTime),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   Widget _buildLegCard(
-      BuildContext context, Leg leg, int index, List<Leg> legs) {
+    BuildContext context,
+    Leg leg,
+    int index,
+    List<Leg> legs,
+  ) {
     // Skip walking legs with zero or null distance
     if (leg.isWalking == true && (leg.distance == null || leg.distance == 0)) {
       return const SizedBox.shrink();
@@ -263,13 +364,11 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -299,14 +398,16 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildLegHeader(
-      BuildContext context, Leg leg, String? platformChangeText, bool hasDelay) {
+    BuildContext context,
+    Leg leg,
+    String? platformChangeText,
+    bool hasDelay,
+  ) {
     return Row(
       children: [
         _buildLegIcon(context, leg),
         const SizedBox(width: 12),
-        Expanded(
-          child: _buildLegTitle(context, leg, platformChangeText),
-        ),
+        Expanded(child: _buildLegTitle(context, leg, platformChangeText)),
         if (hasDelay && leg.isWalking != true) _buildDelayChip(context, leg),
       ],
     );
@@ -345,7 +446,10 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildLegTitle(
-      BuildContext context, Leg leg, String? platformChangeText) {
+    BuildContext context,
+    Leg leg,
+    String? platformChangeText,
+  ) {
     if (leg.isWalking == true && platformChangeText != null) {
       return _buildPlatformChangeText(context, platformChangeText);
     }
@@ -365,7 +469,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildPlatformChangeText(
-      BuildContext context, String platformChangeText) {
+    BuildContext context,
+    String platformChangeText,
+  ) {
     final parts = platformChangeText.split(' to ');
     if (parts.length != 2) return const SizedBox.shrink();
 
@@ -459,8 +565,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             Text(
               'Departure',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color:
-                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -496,10 +601,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                   child: Text(
                     'Platform ${leg.departurePlatformEffective}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -520,8 +624,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             Text(
               'Arrival',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color:
-                Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -567,10 +670,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                   child: Text(
                     'Platform ${leg.arrivalPlatformEffective}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -591,8 +693,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       child: Text(
         leg.isWalking == true
             ? (leg.distance != null && leg.distance! > 0
-            ? '${leg.distance}m'
-            : 'Same platform')
+                  ? '${leg.distance}m'
+                  : 'Same platform')
             : _formatLegDuration(leg.departureDateTime, leg.arrivalDateTime),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
           color: Theme.of(context).colorScheme.onTertiaryContainer,
@@ -628,23 +730,20 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           Text(
             'No journeys found',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color:
-              Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Try adjusting your search criteria',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color:
-              Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildMapView(BuildContext context) {
     return FlutterMap(
@@ -655,11 +754,12 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         minZoom: 3.0,
         maxZoom: 18.0,
         interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.drag |
-          InteractiveFlag.flingAnimation |
-          InteractiveFlag.pinchZoom |
-          InteractiveFlag.doubleTapZoom |
-          InteractiveFlag.rotate,
+          flags:
+              InteractiveFlag.drag |
+              InteractiveFlag.flingAnimation |
+              InteractiveFlag.pinchZoom |
+              InteractiveFlag.doubleTapZoom |
+              InteractiveFlag.rotate,
           rotationThreshold: 20.0,
           pinchZoomThreshold: 0.5,
           pinchMoveThreshold: 40.0,
@@ -668,7 +768,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       children: [
         TileLayer(
           urlTemplate:
-          'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.app',
         ),
         // Add the polyline layer with route path
@@ -677,9 +777,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           alignPositionOnUpdate: AlignOnUpdate.never,
           alignDirectionOnUpdate: AlignOnUpdate.never,
           style: LocationMarkerStyle(
-            marker: DefaultLocationMarker(
-              color: Colors.lightBlue[800]!,
-            ),
+            marker: DefaultLocationMarker(color: Colors.lightBlue[800]!),
             markerSize: const Size(20, 20),
             markerDirection: MarkerDirection.heading,
             accuracyCircleColor: Colors.blue[200]!.withAlpha(0x20),
@@ -704,9 +802,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     print("DEBUG: Created ${polylines.length} polylines for journey legs");
 
     // Return the PolylineLayer with all our colored polylines
-    return PolylineLayer(
-      polylines: polylines,
-    );
+    return PolylineLayer(polylines: polylines);
   }
 
   List<LatLng> _extractRoutePointsFromLegs() {
@@ -721,26 +817,28 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
         // Parse the GeoJSON data
         final Map<String, dynamic> geoJson =
-        polylineData is Map<String, dynamic>
+            polylineData is Map<String, dynamic>
             ? polylineData
             : jsonDecode(polylineData);
 
         if (geoJson['type'] == 'FeatureCollection' &&
             geoJson['features'] is List) {
-
           final List features = geoJson['features'];
 
           for (final feature in features) {
             if (feature['geometry'] != null &&
                 feature['geometry']['type'] == 'Point' &&
                 feature['geometry']['coordinates'] is List) {
-
               final List coords = feature['geometry']['coordinates'];
 
               // GeoJSON uses [longitude, latitude] format
               if (coords.length >= 2) {
-                final double lng = coords[0] is double ? coords[0] : double.parse(coords[0].toString());
-                final double lat = coords[1] is double ? coords[1] : double.parse(coords[1].toString());
+                final double lng = coords[0] is double
+                    ? coords[0]
+                    : double.parse(coords[0].toString());
+                final double lat = coords[1] is double
+                    ? coords[1]
+                    : double.parse(coords[1].toString());
                 allPoints.add(LatLng(lat, lng));
               }
             }
@@ -753,7 +851,6 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
     return allPoints;
   }
-
 
   Widget _buildLocationButton(BuildContext context) {
     return Align(
@@ -805,19 +902,20 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
     return minutes <= 0 ? '1min' : '${minutes}min';
   }
-// Add this as a class field
+
+  // Add this as a class field
   final Map<String, Color> _transitLineColorCache = {};
 
   List<Polyline> _extractPolylinesByLeg() {
     List<Polyline> polylines = [];
     final Map<String, Color> modeColors = {
-      'train': const Color(0xFF9C27B0),  // Purple for trains
-      'subway': const Color(0xFF0075BF),  // Blue for subway/metro
-      'tram': const Color(0xFFE4000F),    // Red for trams
-      'bus': const Color(0xFF9A258F),     // Magenta for buses
-      'ferry': const Color(0xFF0098D8),   // Light blue for ferries
-      'walking': Colors.grey,             // Grey for walking
-      'default': Colors.blue,             // Default blue
+      'train': const Color(0xFF9C27B0), // Purple for trains
+      'subway': const Color(0xFF0075BF), // Blue for subway/metro
+      'tram': const Color(0xFFE4000F), // Red for trams
+      'bus': const Color(0xFF9A258F), // Magenta for buses
+      'ferry': const Color(0xFF0098D8), // Light blue for ferries
+      'walking': Colors.grey, // Grey for walking
+      'default': Colors.blue, // Default blue
     };
 
     try {
@@ -825,7 +923,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         final leg = widget.journey.legs[i];
         if (leg.polyline == null) continue;
 
-        final List<LatLng> legPoints = _extractPointsFromLegPolyline(leg.polyline);
+        final List<LatLng> legPoints = _extractPointsFromLegPolyline(
+          leg.polyline,
+        );
         if (legPoints.isEmpty) continue;
 
         // Determine color based on transit info
@@ -835,11 +935,13 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           lineColor = modeColors['walking']!;
         } else {
           // Create a cache key using available properties
-          final String cacheKey = '${leg.lineName ?? ''}-${leg.productName ?? ''}';
+          final String cacheKey =
+              '${leg.lineName ?? ''}-${leg.productName ?? ''}';
           String productType = leg.productName?.toLowerCase() ?? 'default';
 
           // Use cached color if available, otherwise use product-specific color
-          lineColor = _transitLineColorCache[cacheKey] ??
+          lineColor =
+              _transitLineColorCache[cacheKey] ??
               modeColors[productType] ??
               modeColors['default']!;
 
@@ -848,24 +950,25 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
               leg.lineName != null &&
               leg.lineName!.isNotEmpty &&
               legPoints.isNotEmpty) {
-
             LatLng centerPoint = legPoints[legPoints.length ~/ 2];
             final overpass = Overpassapi();
 
             // Start the async call but don't block polyline creation
-            overpass.getTransitLineColor(
-                lat: centerPoint.latitude,
-                lon: centerPoint.longitude,
-                lineName: leg.lineName!,
-                mode: leg.productName
-            ).then((color) {
-              if (mounted && color != null) {
-                setState(() {
-                  _transitLineColorCache[cacheKey] = color as Color;
-                  // The setState will trigger rebuild with the new colors
+            overpass
+                .getTransitLineColor(
+                  lat: centerPoint.latitude,
+                  lon: centerPoint.longitude,
+                  lineName: leg.lineName!,
+                  mode: leg.productName,
+                )
+                .then((color) {
+                  if (mounted && color != null) {
+                    setState(() {
+                      _transitLineColorCache[cacheKey] = color as Color;
+                      // The setState will trigger rebuild with the new colors
+                    });
+                  }
                 });
-              }
-            });
           }
         }
 
@@ -876,7 +979,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             points: legPoints,
             color: lineColor,
             strokeWidth: strokeWidth,
-            pattern: leg.isWalking == true ? StrokePattern.dotted() : StrokePattern.solid(),
+            pattern: leg.isWalking == true
+                ? StrokePattern.dotted()
+                : StrokePattern.solid(),
           ),
         );
       }
@@ -895,19 +1000,23 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           ? polylineData
           : jsonDecode(polylineData);
 
-      if (geoJson['type'] == 'FeatureCollection' && geoJson['features'] is List) {
+      if (geoJson['type'] == 'FeatureCollection' &&
+          geoJson['features'] is List) {
         final List features = geoJson['features'];
 
         for (final feature in features) {
           if (feature['geometry'] != null &&
               feature['geometry']['type'] == 'Point' &&
               feature['geometry']['coordinates'] is List) {
-
             final List coords = feature['geometry']['coordinates'];
 
             if (coords.length >= 2) {
-              final double lng = coords[0] is double ? coords[0] : double.parse(coords[0].toString());
-              final double lat = coords[1] is double ? coords[1] : double.parse(coords[1].toString());
+              final double lng = coords[0] is double
+                  ? coords[0]
+                  : double.parse(coords[0].toString());
+              final double lat = coords[1] is double
+                  ? coords[1]
+                  : double.parse(coords[1].toString());
               points.add(LatLng(lat, lng));
             }
           }

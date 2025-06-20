@@ -455,33 +455,81 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   }
 
   Widget _buildJourneys(BuildContext context) {
-  if (_currentJourneys == null) {
-    return Center(child: CircularProgressIndicator());
-  }
-  if (_currentJourneys!.isEmpty) {
-    return Center(child: Text('No journeys found'));
-  }
-  return Expanded(
-    child: ListView.builder(
-      key: const ValueKey('list'),
-      padding: EdgeInsets.all(8),
-      itemCount: _currentJourneys!.length,
-      itemBuilder: (context, i) {
-        final r = _currentJourneys![i];
-        return Card(
-          clipBehavior: Clip.hardEdge,
-          shadowColor: Colors.transparent,
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => JourneyPageAndroid(
-                      JourneyPage(journey: r), journey: r, // `r` is a single Journey object
+    if (_currentJourneys == null) {
+      return Center(child: CircularProgressIndicator());
+    }
+    if (_currentJourneys!.isEmpty) {
+      return Center(child: Text('No journeys found'));
+    }
+    return Expanded(
+      child: ListView.builder(
+        key: const ValueKey('list'),
+        padding: EdgeInsets.all(8),
+        itemCount: _currentJourneys!.length,
+        itemBuilder: (context, i) {
+          final r = _currentJourneys![i];
+          return Card(
+            clipBehavior: Clip.hardEdge,
+            shadowColor: Colors.transparent,
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            child: InkWell(
+              onTap: () async {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Refreshing journey information...'),
+                      ],
                     ),
                   ),
                 );
+
+                try {
+                  // Refresh the journey using the service
+                  final refreshedJourney = await widget.page.services.refreshJourney(r);
+
+                  // Close the loading dialog
+                  Navigator.pop(context);
+
+                  // Navigate to journey page with the refreshed journey
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => JourneyPageAndroid(
+                        JourneyPage(journey: refreshedJourney),
+                        journey: refreshedJourney,
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  // Close the loading dialog
+                  Navigator.pop(context);
+
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Could not refresh journey: ${e.toString()}'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+
+                  // Navigate with the original journey as fallback
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => JourneyPageAndroid(
+                        JourneyPage(journey: r),
+                        journey: r,
+                      ),
+                    ),
+                  );
+                }
               },
             child: Padding(
               padding: EdgeInsets.all(16),

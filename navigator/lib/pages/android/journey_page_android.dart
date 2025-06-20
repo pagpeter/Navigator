@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/leg.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
+import 'dart:convert';
 
 class JourneyPageAndroid extends StatefulWidget {
   final JourneyPage page;
@@ -44,6 +45,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   late StreamController<LocationMarkerPosition> _locationStreamController;
   late StreamController<LocationMarkerHeading> _headingStreamController;
   StreamSubscription<Position>? _geolocatorSubscription;
+
 
   @override
   void initState() {
@@ -641,6 +643,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     );
   }
 
+
   Widget _buildMapView(BuildContext context) {
     return FlutterMap(
       mapController: _mapController,
@@ -666,6 +669,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.app',
         ),
+        // Add the polyline layer with route path
+        _buildPolylineLayer(),
         CurrentLocationLayer(
           alignPositionOnUpdate: AlignOnUpdate.never,
           alignDirectionOnUpdate: AlignOnUpdate.never,
@@ -684,6 +689,74 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       ],
     );
   }
+
+  Widget _buildPolylineLayer() {
+    // Extract route points from all legs' polylines
+    final List<LatLng> routePoints = _extractRoutePointsFromLegs();
+
+    if (routePoints.isEmpty) {
+      print("DEBUG: No route points found in legs' polyline data");
+      return const SizedBox.shrink();
+    }
+
+    print("DEBUG: Found ${routePoints.length} route points from legs");
+
+    return PolylineLayer(
+      polylines: [
+        Polyline(
+          points: routePoints,
+          color: Colors.blue,
+          strokeWidth: 4.0,
+        ),
+      ],
+    );
+  }
+
+  List<LatLng> _extractRoutePointsFromLegs() {
+    List<LatLng> allPoints = [];
+
+    try {
+      // Iterate through each leg to extract polyline data
+      for (final leg in widget.journey.legs) {
+        if (leg.polyline == null) continue;
+
+        final dynamic polylineData = leg.polyline;
+
+        // Parse the GeoJSON data
+        final Map<String, dynamic> geoJson =
+        polylineData is Map<String, dynamic>
+            ? polylineData
+            : jsonDecode(polylineData);
+
+        if (geoJson['type'] == 'FeatureCollection' &&
+            geoJson['features'] is List) {
+
+          final List features = geoJson['features'];
+
+          for (final feature in features) {
+            if (feature['geometry'] != null &&
+                feature['geometry']['type'] == 'Point' &&
+                feature['geometry']['coordinates'] is List) {
+
+              final List coords = feature['geometry']['coordinates'];
+
+              // GeoJSON uses [longitude, latitude] format
+              if (coords.length >= 2) {
+                final double lng = coords[0] is double ? coords[0] : double.parse(coords[0].toString());
+                final double lat = coords[1] is double ? coords[1] : double.parse(coords[1].toString());
+                allPoints.add(LatLng(lat, lng));
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing leg polyline data: $e');
+    }
+
+    return allPoints;
+  }
+
 
   Widget _buildLocationButton(BuildContext context) {
     return Align(

@@ -188,6 +188,7 @@ class SubwayTileLayer {
       minZoom: 10,
       // Use custom URL template that won't be used since we override the provider
       urlTemplate: '',
+      
     );
   }
   

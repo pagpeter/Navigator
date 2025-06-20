@@ -495,12 +495,12 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                         children: [
                           // Planned Departure Time
                           Text(
-                            '${r.legs[0].plannedDepartureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].plannedDepartureDateTime.minute.toString().padLeft(2, '0')}',
+                            '${r.legs[0].plannedDepartureDateTime?.hour.toString().padLeft(2, '0')}:${r.legs[0].plannedDepartureDateTime?.minute.toString().padLeft(2, '0')}',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           // Actual Departure Time
                           Text(
-                            '${r.legs[0].departureDateTime.hour.toString().padLeft(2, '0')}:${r.legs[0].departureDateTime.minute.toString().padLeft(2, '0')}',
+                            '${r.legs[0].departureDateTime?.hour.toString().padLeft(2, '0')}:${r.legs[0].departureDateTime?.minute.toString().padLeft(2, '0')}',
                             style: Theme.of(context).textTheme.labelSmall!.copyWith(
                               color: r.legs[0].departureDateTime != r.legs[0].plannedDepartureDateTime
                                   ? Colors.redAccent[400]

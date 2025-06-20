@@ -119,18 +119,51 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
 
         return Column(
           children: [
-            _buildLeg(context, leg),
-            if (!isLast) _buildConnection(context),
+            _buildLeg(context, leg, index, journey.legs),
+            if (!isLast) ...[
+              if (leg.arrivalPlatformEffective.isNotEmpty &&
+                  journey.legs[index + 1].departurePlatformEffective.isNotEmpty &&
+                  leg.arrivalPlatformEffective != journey.legs[index + 1].departurePlatformEffective)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.compare_arrows, color: Colors.orange, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Platform change: ${leg.arrivalPlatformEffective} → ${journey.legs[index + 1].departurePlatformEffective}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              _buildConnection(context),
+            ]
           ],
         );
       },
     );
   }
 
-  Widget _buildLeg(BuildContext context, Leg leg) {
+  Widget _buildLeg(BuildContext context, Leg leg, int index, List<Leg> legs) {
     // Skip walking legs with zero or null distance (to avoid "nullm")
     if (leg.isWalking == true && (leg.distance == null || leg.distance == 0)) {
       return SizedBox.shrink();
+    }
+
+    String? platformChangeText;
+    if (leg.isWalking == true && index > 0 && index < legs.length - 1) {
+      final prevLeg = legs[index - 1];
+      final nextLeg = legs[index + 1];
+      if (prevLeg.arrivalPlatformEffective.isNotEmpty &&
+          nextLeg.departurePlatformEffective.isNotEmpty &&
+          prevLeg.arrivalPlatformEffective != nextLeg.departurePlatformEffective) {
+        platformChangeText =
+        'Platform change: ${prevLeg.arrivalPlatformEffective} → ${nextLeg.departurePlatformEffective}';
+      }
     }
     
     final hasDelay = leg.hasDelays;
@@ -183,22 +216,27 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                 Expanded(
                   child: Row(
                     children: [
-                      if ((leg.direction ?? '').isNotEmpty)
-                        Flexible(
+                      if (leg.isWalking == true && platformChangeText != null)
+                        Expanded(
                           child: Text(
-                            '${leg.direction}',
+                            platformChangeText,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         )
-                      else
-                        Flexible(
+                      else if (leg.direction != null && leg.direction!.isNotEmpty)
+                        Expanded(
                           child: Text(
-                            '', // Or you could use 'No direction' for debugging
-                            style: Theme.of(context).textTheme.bodySmall,
+                            leg.direction!,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                     ],
@@ -295,11 +333,11 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
-                          if (leg.departurePlatform?.isNotEmpty == true)
+                          if (leg.departurePlatformEffective.isNotEmpty == true)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'Platform ${leg.departurePlatform}',
+                                'Platform ${leg.departurePlatformEffective}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
@@ -312,6 +350,10 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                 ),
               ),
 
+
+              // Spacer before duration box
+              const SizedBox(width: 12),
+
               // Duration
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -323,7 +365,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                   leg.isWalking == true
                       ? (leg.distance != null && leg.distance! > 0
                       ? '${leg.distance}m'
-                      : 'Same platform') // or 'Same platform' if you prefer
+                      : 'Same platform')
                       : _formatLegDuration(leg.departureDateTime, leg.arrivalDateTime),
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onTertiaryContainer,
@@ -331,6 +373,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                   ),
                 ),
               ),
+
+              // Spacer after duration box
+              const SizedBox(width: 12),
 
               // Arrival
               Expanded(
@@ -390,11 +435,11 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
-                          if (leg.arrivalPlatform?.isNotEmpty == true)
+                          if (leg.arrivalPlatformEffective.isNotEmpty == true)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'Platform ${leg.arrivalPlatform}',
+                                'Platform ${leg.arrivalPlatformEffective}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 ),
@@ -412,6 +457,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
       ),
     );
   }
+
 
   Widget _buildConnection(BuildContext context) {
     return Container(
@@ -474,23 +520,15 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
     return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  String _formatDuration(DateTime start, DateTime end) {
-    final duration = end.difference(start);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}min';
-    } else {
-      return '${minutes}min';
-    }
-  }
 
   String _formatLegDuration(DateTime? start, DateTime? end) {
     if (start == null || end == null) return '0min';
 
     final duration = end.difference(start);
-    final minutes = duration.inMinutes;
+    final totalSeconds = duration.inSeconds;
+
+    // Convert seconds to minutes, rounding up
+    final minutes = (totalSeconds / 60).ceil();
 
     // Handle edge cases (duration < 1 minute)
     if (minutes <= 0) return '1min';
@@ -498,7 +536,5 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid> {
     return '${minutes}min';
   }
 
-  bool _hasDelays(Journey journey) {
-    return journey.legs.any((leg) => leg.hasDelays);
-  }
+
 }

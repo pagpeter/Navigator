@@ -9,6 +9,7 @@ import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/leg.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 import 'dart:convert';
+import 'package:navigator/models/station.dart';
 
 import '../../services/overpassApi.dart';
 
@@ -242,111 +243,203 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       itemBuilder: (context, index) {
         final leg = journey.legs[index];
         final isLast = index == journey.legs.length - 1;
+        final isFirst = index == 0;
 
         return Column(
           children: [
+            if (isFirst) _buildOriginComponent(context, leg.origin),
+            if (!isFirst)
+              _buildInterchangeComponent(
+                context,
+                journey.legs[index - 1],
+                leg,
+                _getPlatformChangeText(leg, index, journey.legs),
+              ),
             if (leg.isWalking == true)
               _buildWalkingLegCard(context, leg, index, journey.legs),
-            if (_getPlatformChangeText(leg, index, journey.legs) != null)
-              _buildInterChangeCard(context, leg, index, journey.legs),
-            if(!(leg.isWalking == true))
+            if (!(leg.isWalking == true))
               _buildLegCard(context, leg, index, journey.legs),
             if (!isLast) _buildConnectionLine(context),
+            if (isLast) _buildDestinationComponent(context, leg.destination),
           ],
         );
       },
     );
   }
 
-  Widget _buildInterChangeCard(
+  Widget _buildInterchangeComponent(
+    BuildContext context,
+    Leg arrivingLeg,
+    Leg departingLeg,
+    String? platformChangeText,
+  ) {
+
+    Color arrivalTimeColor = Theme.of(context).colorScheme.onSurface;
+    Color departureTimeColor = Theme.of(context).colorScheme.onSurface;
+    Color arrivalPlatformColor = Theme.of(context).colorScheme.onSurface;
+    Color departurePlatformColor = Theme.of(context).colorScheme.onSurface;
+
+    if(arrivingLeg.arrivalDelayMinutes != null)
+    {
+      if(arrivingLeg.arrivalDelayMinutes! > 10)
+      {
+        arrivalTimeColor = Theme.of(context).colorScheme.error;
+      }
+      else if(arrivingLeg.arrivalDelayMinutes! > 0)
+      {
+        arrivalTimeColor = Theme.of(context).colorScheme.tertiary;
+      }
+    }
+
+    if(departingLeg.departureDelayMinutes != null)
+    {
+      if(departingLeg.departureDelayMinutes! > 10)
+      {
+        departureTimeColor = Theme.of(context).colorScheme.error;
+      }
+      else if(departingLeg.departureDelayMinutes! > 0)
+      {
+        departureTimeColor = Theme.of(context).colorScheme.tertiary;
+      }
+    }
+
+    if(arrivingLeg.arrivalPlatform != arrivingLeg.arrivalPlatformEffective)
+    {
+      arrivalPlatformColor = Theme.of(context).colorScheme.error;
+    }
+
+    if(departingLeg.departurePlatform != departingLeg.departurePlatformEffective)
+    {
+      departurePlatformColor = Theme.of(context).colorScheme.error;
+    }
+
+    return Card(
+      margin: EdgeInsets.all(24),
+      child: Column(
+        children: [
+          //Name
+          Expanded(
+            child: Container(
+              color: Theme.of(context).colorScheme.secondary,
+              child: Text(
+                departingLeg.origin.name,
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.onSecondary,
+                ),
+              ),
+            ),
+          ),
+          //Gleis Ankunft + Zeit Ankunft
+          Expanded(child: Row(
+            children: [
+              Column(
+                children: [
+                  Text(arrivingLeg.effectiveArrival, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: arrivalTimeColor)),
+                  Text(departingLeg.effectiveDeparture, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: departureTimeColor),)
+                ],
+              ),
+              Text('Interchange: ' + departingLeg.departureDateTime.difference(arrivingLeg.arrivalDateTime).inMinutes.toString() + ' minutes'),
+              Column(children: [
+                Text(arrivingLeg.arrivalPlatformEffective, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: departurePlatformColor)),
+                Text(departingLeg.departurePlatformEffective, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: arrivalPlatformColor))
+              ],)
+            ],
+          ),)
+          //Umstiegszeit
+          //Gleis Abfahrt + Zeit Abfahrt
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOriginComponent(BuildContext context, Station s) {
+    return Container();
+  }
+
+  Widget _buildDestinationComponent(BuildContext context, Station s) {
+    return Container();
+  }
+
+  Widget _buildWalkingLegCard(
     BuildContext context,
     Leg leg,
     int index,
     List<Leg> legs,
   ) {
-    return Container();
-  }
-
-  Widget _buildWalkingLegCard(
-  BuildContext context,
-  Leg leg,
-  int index,
-  List<Leg> legs,
-) {
-  if (leg.distance == null || leg.distance == 0) {
-    return const SizedBox.shrink();
-  }
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: Theme.of(context).colorScheme.outline),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Row(
+    if (leg.distance == null || leg.distance == 0) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.directions_walk,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _buildDurationChip(context, leg),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_right,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    leg.destination.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => {},
+                  icon: Icon(Icons.map),
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.directions_walk,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+              Text(
+                _formatTime(leg.departureDateTime),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
-              const SizedBox(width: 8),
-              _buildDurationChip(context, leg),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_right,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  leg.destination.name,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 8),
+              Text(
+                _formatTime(leg.arrivalDateTime),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () => {},
-                icon: Icon(Icons.map),
-                color: Theme.of(context).colorScheme.secondary,
               ),
             ],
           ),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              _formatTime(leg.departureDateTime),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _formatTime(leg.arrivalDateTime),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildLegCard(
     BuildContext context,

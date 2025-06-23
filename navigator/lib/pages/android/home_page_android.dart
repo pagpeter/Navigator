@@ -422,7 +422,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-              // Remove the spacing property
+              spacing: 16,
               children: [
                 Expanded(
                   child: TextField(
@@ -445,7 +445,6 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
                 IconButton.filledTonal(
   onPressed: () {
     showModalBottomSheet(

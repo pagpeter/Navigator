@@ -4,38 +4,35 @@ class Leg {
   final String? tripID;
   final String? direction;
   final Station origin;
-  final String? departure;
+  final String departure;
   final String plannedDeparture;
   final String? departureDelay;
   final String? departurePlatform;
   final String? plannedDeparturePlatform;
   final Station destination;
-  final String? arrival;
+  final String arrival;
   final String plannedArrival;
   final String? arrivalDelay;
   final String? arrivalPlatform;
   final String? plannedArrivalPlatform;
-  final dynamic polyline;
 
-
-  // Additional fields
+  // Additional fields that might be useful from the API
   final bool? isWalking;
   final int? distance;
   final String? lineName;
   final String? productName;
 
-
   Leg({
     this.tripID,
     this.direction,
     required this.origin,
-    this.departure,
+    required this.departure,
     required this.plannedDeparture,
     this.departureDelay,
     this.departurePlatform,
     this.plannedDeparturePlatform,
     required this.destination,
-    this.arrival,
+    required this.arrival,
     required this.plannedArrival,
     this.arrivalDelay,
     this.arrivalPlatform,
@@ -44,22 +41,24 @@ class Leg {
     this.distance,
     this.lineName,
     this.productName,
-    this.polyline,
   });
 
   factory Leg.fromJson(Map<String, dynamic> json) {
-    String? safeGetString(dynamic value) {
-      if (value == null) return null;
+    // Helper function to safely get string values
+    String safeGetString(dynamic value) {
+      if (value == null) return '';
       return value.toString();
     }
 
-    String? safeGetNestedString(Map<String, dynamic>? parent, String key) {
-      if (parent == null) return null;
+    // Helper function to safely get nested string values
+    String safeGetNestedString(Map<String, dynamic>? parent, String key) {
+      if (parent == null) return '';
       final value = parent[key];
-      if (value == null) return null;
+      if (value == null) return '';
       return value.toString();
     }
 
+    // Safe station parsing
     Station safeGetStation(dynamic stationJson) {
       if (stationJson == null) return Station.empty();
       try {
@@ -72,16 +71,16 @@ class Leg {
 
     return Leg(
       tripID: safeGetString(json['tripId']),
-      direction: safeGetString(json['direction']),
+      direction: safeGetNestedString(json['line'], 'direction'),
       origin: safeGetStation(json['origin']),
       departure: safeGetString(json['departure']),
-      plannedDeparture: safeGetString(json['plannedDeparture']) ?? '',
+      plannedDeparture: safeGetString(json['plannedDeparture']),
       departureDelay: safeGetString(json['departureDelay']),
       departurePlatform: safeGetString(json['departurePlatform']),
       plannedDeparturePlatform: safeGetString(json['plannedDeparturePlatform']),
       destination: safeGetStation(json['destination']),
       arrival: safeGetString(json['arrival']),
-      plannedArrival: safeGetString(json['plannedArrival']) ?? '',
+      plannedArrival: safeGetString(json['plannedArrival']),
       arrivalDelay: safeGetString(json['arrivalDelay']),
       arrivalPlatform: safeGetString(json['arrivalPlatform']),
       plannedArrivalPlatform: safeGetString(json['plannedArrivalPlatform']),
@@ -89,7 +88,6 @@ class Leg {
       distance: json['distance'],
       lineName: safeGetNestedString(json['line'], 'name'),
       productName: safeGetNestedString(json['line'], 'productName'),
-      polyline: json['polyline'], // Optional, can be null
     );
   }
 
@@ -111,129 +109,61 @@ class Leg {
       'plannedArrivalPlatform': plannedArrivalPlatform,
       'walking': isWalking,
       'distance': distance,
-      'line': lineName != null || productName != null ? {
+      'line': lineName != null ? {
         'name': lineName,
         'productName': productName,
       } : null,
-      if (polyline != null) 'polyline': polyline,
     };
   }
-
-  // Helper getters for effective times
-  String get effectiveDeparture => departure ?? plannedDeparture;
-  String get effectiveArrival => arrival ?? plannedArrival;
-  String get effectiveDeparturePlatform =>
-      departurePlatform ?? plannedDeparturePlatform ?? '';
-
-  String get effectiveArrivalPlatform =>
-      arrivalPlatform ?? plannedArrivalPlatform ?? '';
 
   @override
   String toString() {
     if (isWalking == true) {
       return 'Walking from ${origin.name} to ${destination.name} (${distance}m, ${_formatDuration()})';
     }
-    String departureTime = '';
-    String arrivalTime = '';
-    try {
-      departureTime = effectiveDeparture.split('T')[1].substring(0, 5);
-      arrivalTime = effectiveArrival.split('T')[1].substring(0, 5);
-    } catch (e) {
-      departureTime = 'unknown';
-      arrivalTime = 'unknown';
-    }
     return '$lineName from ${origin.name} to ${destination.name} '
-        '($departureTime - $arrivalTime)';
+        '(${departure.split('T')[1].substring(0, 5)} - ${arrival.split('T')[1].substring(0, 5)})';
   }
 
   String _formatDuration() {
-    try {
-      if (effectiveDeparture.isEmpty || effectiveArrival.isEmpty) return 'unknown';
-      final dep = DateTime.parse(effectiveDeparture);
-      final arr = DateTime.parse(effectiveArrival);
-      final duration = arr.difference(dep);
-      return '${duration.inMinutes}min';
-    } catch (e) {
-      return 'unknown';
-    }
+    final dep = DateTime.parse(departure);
+    final arr = DateTime.parse(arrival);
+    final duration = arr.difference(dep);
+    return '${duration.inMinutes}min';
   }
 
-  DateTime get departureDateTime {
-    final parsed = DateTime.parse(effectiveDeparture);
-    return parsed.isUtc ? parsed.toLocal() : parsed;
-  }
+  // Helper method to check if there are delays
+  bool get hasDelays => departureDelay != null || arrivalDelay != null;
 
-  DateTime get arrivalDateTime {
-    final parsed = DateTime.parse(effectiveArrival);
-    return parsed.isUtc ? parsed.toLocal() : parsed;
-  }
-
-  DateTime get plannedDepartureDateTime {
-    final dateStr = plannedDeparture.isNotEmpty ? plannedDeparture : effectiveDeparture;
-    final parsed = DateTime.parse(dateStr);
-    return parsed.isUtc ? parsed.toLocal() : parsed;
-  }
-
-  DateTime get plannedArrivalDateTime {
-    final dateStr = plannedArrival.isNotEmpty ? plannedArrival : effectiveArrival;
-    final parsed = DateTime.parse(dateStr);
-    return parsed.isUtc ? parsed.toLocal() : parsed;
-  }
-
-  bool get hasDelays {
-    final depDelay = departureDelay != null ? int.tryParse(departureDelay!) ?? 0 : 0;
-    final arrDelay = arrivalDelay != null ? int.tryParse(arrivalDelay!) ?? 0 : 0;
-    return depDelay > 0 || arrDelay > 0;
-  }
-
+  // Helper method to get delay in minutes
   int? get departureDelayMinutes {
     if (departureDelay == null) return null;
-
-    final seconds = int.tryParse(departureDelay!);
-    if (seconds == null) return null;
-
-    return (seconds / 60).ceil();
+    return int.tryParse(departureDelay!);
   }
 
   int? get arrivalDelayMinutes {
     if (arrivalDelay == null) return null;
-
-    final seconds = int.tryParse(arrivalDelay!);
-    if (seconds == null) return null;
-
-    return (seconds / 60).ceil();
+    return int.tryParse(arrivalDelay!);
   }
 
-  bool platformChange(Leg nextLeg) {
-    final currentArrival = arrivalPlatformEffective;
-    final nextDeparture = nextLeg.departurePlatformEffective;
-    return currentArrival.isNotEmpty &&
-        nextDeparture.isNotEmpty &&
-        currentArrival != nextDeparture;
-  }
+  DateTime get departureDateTime {
+  final parsed = DateTime.parse(departure);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
 
-  // Returns actual departure platform, or planned, or empty string
-  String get departurePlatformEffective =>
-      departurePlatform?.isNotEmpty == true
-          ? departurePlatform!
-          : (plannedDeparturePlatform ?? '');
+DateTime get arrivalDateTime {
+  final parsed = DateTime.parse(arrival);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
 
-// Returns planned departure platform, or actual, or empty string
-  String get plannedDeparturePlatformEffective =>
-      plannedDeparturePlatform?.isNotEmpty == true
-          ? plannedDeparturePlatform!
-          : (departurePlatform ?? '');
+DateTime get plannedDepartureDateTime {
+  final parsed = DateTime.parse(plannedDeparture);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
 
-// Returns actual arrival platform, or planned, or empty string
-  String get arrivalPlatformEffective =>
-      arrivalPlatform?.isNotEmpty == true
-          ? arrivalPlatform!
-          : (plannedArrivalPlatform ?? '');
-
-// Returns planned arrival platform, or actual, or empty string
-  String get plannedArrivalPlatformEffective =>
-      plannedArrivalPlatform?.isNotEmpty == true
-          ? plannedArrivalPlatform!
-          : (arrivalPlatform ?? '');
+DateTime get plannedArrivalDateTime {
+  final parsed = DateTime.parse(plannedArrival);
+  return parsed.isUtc ? parsed.toLocal() : parsed;
+}
 
 }

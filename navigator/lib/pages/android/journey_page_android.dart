@@ -244,7 +244,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         final leg = journey.legs[index];
         final isLast = index == journey.legs.length - 1;
         final isFirst = index == 0;
-
+        if(leg.distance != null || leg.distance == 0)
+        {
         return Column(
           children: [
             if (isFirst) _buildOriginComponent(context, leg.origin),
@@ -263,7 +264,13 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             if (isLast) _buildDestinationComponent(context, leg.destination),
           ],
         );
-      },
+      }
+      
+      else
+      {
+        return Container();
+      }
+      }
     );
   }
 
@@ -320,6 +327,10 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           //Name
           Container(
             color: Theme.of(context).colorScheme.secondary,
+            decoration: BoxDecoration(
+              
+              borderRadius: BorderRadius.all(Radius.circular(24))
+            ),
             child: Text(
               departingLeg.origin.name,
               style: Theme.of(context).textTheme.headlineMedium!.copyWith(

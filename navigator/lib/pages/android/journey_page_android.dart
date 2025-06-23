@@ -318,19 +318,17 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       child: Column(
         children: [
           //Name
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.secondary,
-              child: Text(
-                departingLeg.origin.name,
-                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.onSecondary,
-                ),
+          Container(
+            color: Theme.of(context).colorScheme.secondary,
+            child: Text(
+              departingLeg.origin.name,
+              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                color: Theme.of(context).colorScheme.onSecondary,
               ),
             ),
           ),
           //Gleis Ankunft + Zeit Ankunft
-          Expanded(child: Row(
+          Row(
             children: [
               Column(
                 children: [
@@ -344,7 +342,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                 Text(departingLeg.departurePlatformEffective, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: arrivalPlatformColor))
               ],)
             ],
-          ),)
+          )
           //Umstiegszeit
           //Gleis Abfahrt + Zeit Abfahrt
         ],

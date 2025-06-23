@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:navigator/env/env.dart';
 import 'package:navigator/models/leg.dart';
 import 'package:geocoding/geocoding.dart' as geo;
+import 'dart:convert';
+import 'dart:io';
 
 class dbApiService {
   final base_url = Env.api_url;
@@ -112,6 +114,51 @@ class dbApiService {
       rethrow;
     }
   }
+
+
+
+  Future<Journey> refreshJourney(Journey journey) async {
+    final encodedToken = Uri.encodeComponent(journey.refreshToken);
+    final url = 'http://$base_url/journeys/$encodedToken?polylines=true';
+    final uri = Uri.parse(url);
+
+    print('Refreshing journey with token: ${journey.refreshToken}');
+    print('Final URI: $uri');
+
+    try {
+      final response = await http.get(uri);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      // Print full response in chunks
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+        if (data is Map<String, dynamic>) {
+          final journeyJson = data['journey'];
+
+
+          return Journey.parseSingleJourneyResponse(journeyJson);
+        } else {
+          throw FormatException('Unexpected response format: expected a JSON object.');
+        }
+      } else {
+        throw HttpException(
+          'Failed to refresh journey. Status code: ${response.statusCode}',
+          uri: uri,
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Exception in refreshJourney: $e');
+      print('Stack trace: $stackTrace');
+      throw Exception('Could not refresh journey: $e');
+    }
+  }
+
+
+
 
   Future<List<Location>> fetchLocations(String query) async {
     final uri = Uri.http(base_url, '/locations', {

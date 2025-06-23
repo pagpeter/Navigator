@@ -113,10 +113,10 @@ jobs:
 
   build-ios:
     runs-on: macos-latest
-  
+
     env:
       API_URL: ${{ secrets.API_URL }}
-  
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -137,10 +137,17 @@ jobs:
           cd navigator
           flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Build iOS (no code signing)
+      - name: Build IPA (no code signing)
         run: |
           cd navigator
-          flutter build ios --release --no-codesign
+          flutter build ipa --no-codesign
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ipa
+          path: navigator/build/ios/ipa/*.ipa
+
 
     
     # Note: For signed iOS builds, you'll need to configure code signing

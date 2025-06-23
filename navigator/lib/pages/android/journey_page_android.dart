@@ -244,33 +244,29 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         final leg = journey.legs[index];
         final isLast = index == journey.legs.length - 1;
         final isFirst = index == 0;
-        if(leg.distance != null || leg.distance == 0)
-        {
-        return Column(
-          children: [
-            if (isFirst) _buildOriginComponent(context, leg.origin),
-            if (!isFirst)
-              _buildInterchangeComponent(
-                context,
-                journey.legs[index - 1],
-                leg,
-                _getPlatformChangeText(leg, index, journey.legs),
-              ),
-            if (leg.isWalking == true)
-              _buildWalkingLegCard(context, leg, index, journey.legs),
-            if (!(leg.isWalking == true))
-              _buildLegCard(context, leg, index, journey.legs),
-            if (!isLast) _buildConnectionLine(context),
-            if (isLast) _buildDestinationComponent(context, leg.destination),
-          ],
-        );
-      }
-      
-      else
-      {
-        return Container();
-      }
-      }
+        if (leg.distance == null || leg.distance == 0) {
+          return Column(
+            children: [
+              if (isFirst) _buildOriginComponent(context, leg.origin),
+              if (!isFirst)
+                _buildInterchangeComponent(
+                  context,
+                  journey.legs[index - 1],
+                  leg,
+                  _getPlatformChangeText(leg, index, journey.legs),
+                ),
+              if (leg.isWalking == true)
+                _buildWalkingLegCard(context, leg, index, journey.legs),
+              if (!(leg.isWalking == true))
+                _buildLegCard(context, leg, index, journey.legs),
+              if (!isLast) _buildConnectionLine(context),
+              if (isLast) _buildDestinationComponent(context, leg.destination),
+            ],
+          );
+        } else {
+          return Container();
+        }
+      },
     );
   }
 
@@ -280,43 +276,33 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     Leg departingLeg,
     String? platformChangeText,
   ) {
-
     Color arrivalTimeColor = Theme.of(context).colorScheme.onSurface;
     Color departureTimeColor = Theme.of(context).colorScheme.onSurface;
     Color arrivalPlatformColor = Theme.of(context).colorScheme.onSurface;
     Color departurePlatformColor = Theme.of(context).colorScheme.onSurface;
 
-    if(arrivingLeg.arrivalDelayMinutes != null)
-    {
-      if(arrivingLeg.arrivalDelayMinutes! > 10)
-      {
+    if (arrivingLeg.arrivalDelayMinutes != null) {
+      if (arrivingLeg.arrivalDelayMinutes! > 10) {
         arrivalTimeColor = Theme.of(context).colorScheme.error;
-      }
-      else if(arrivingLeg.arrivalDelayMinutes! > 0)
-      {
+      } else if (arrivingLeg.arrivalDelayMinutes! > 0) {
         arrivalTimeColor = Theme.of(context).colorScheme.tertiary;
       }
     }
 
-    if(departingLeg.departureDelayMinutes != null)
-    {
-      if(departingLeg.departureDelayMinutes! > 10)
-      {
+    if (departingLeg.departureDelayMinutes != null) {
+      if (departingLeg.departureDelayMinutes! > 10) {
         departureTimeColor = Theme.of(context).colorScheme.error;
-      }
-      else if(departingLeg.departureDelayMinutes! > 0)
-      {
+      } else if (departingLeg.departureDelayMinutes! > 0) {
         departureTimeColor = Theme.of(context).colorScheme.tertiary;
       }
     }
 
-    if(arrivingLeg.arrivalPlatform != arrivingLeg.arrivalPlatformEffective)
-    {
+    if (arrivingLeg.arrivalPlatform != arrivingLeg.arrivalPlatformEffective) {
       arrivalPlatformColor = Theme.of(context).colorScheme.error;
     }
 
-    if(departingLeg.departurePlatform != departingLeg.departurePlatformEffective)
-    {
+    if (departingLeg.departurePlatform !=
+        departingLeg.departurePlatformEffective) {
       departurePlatformColor = Theme.of(context).colorScheme.error;
     }
 
@@ -328,8 +314,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.secondary,
-              
-              borderRadius: BorderRadius.all(Radius.circular(24))
+
+              borderRadius: BorderRadius.all(Radius.circular(24)),
             ),
             child: Text(
               departingLeg.origin.name,
@@ -340,20 +326,55 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           ),
           //Gleis Ankunft + Zeit Ankunft
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: 8,
                 children: [
-                  Text(arrivingLeg.effectiveArrival, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: arrivalTimeColor)),
-                  Text(departingLeg.effectiveDeparture, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: departureTimeColor),)
+                  Text(
+                    arrivingLeg.effectiveArrival,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium!.copyWith(color: arrivalTimeColor),
+                  ),
+                  Text('Interchange: '),
+
+                  Text(
+                    departingLeg.effectiveDeparture,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium!.copyWith(color: departureTimeColor),
+                  ),
                 ],
               ),
-              Text('Interchange: ' + departingLeg.departureDateTime.difference(arrivingLeg.arrivalDateTime).inMinutes.toString() + ' minutes'),
-              Column(children: [
-                Text(arrivingLeg.arrivalPlatformEffective, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: departurePlatformColor)),
-                Text(departingLeg.departurePlatformEffective, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: arrivalPlatformColor))
-              ],)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: 8,
+                children: [
+                  Text(
+                    arrivingLeg.arrivalPlatformEffective,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: arrivalPlatformColor,
+                    ),
+                  ),
+                  Text(
+                    departingLeg.departureDateTime
+                            .difference(arrivingLeg.arrivalDateTime)
+                            .inMinutes
+                            .toString() +
+                        ' minutes',
+                  ),
+                  Text(
+                    departingLeg.departurePlatformEffective,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                      color: departurePlatformColor,
+                    ),
+                  ),
+                ],
+              ),
             ],
-          )
+          ),
           //Umstiegszeit
           //Gleis Abfahrt + Zeit Abfahrt
         ],

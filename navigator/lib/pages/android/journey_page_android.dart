@@ -326,8 +326,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         children: [
           //Name
           Container(
-            color: Theme.of(context).colorScheme.secondary,
             decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondary,
               
               borderRadius: BorderRadius.all(Radius.circular(24))
             ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -170,7 +171,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         builder: (context, scrollController) {
           return Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: Theme.of(context).colorScheme.tertiaryContainer,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
@@ -236,36 +237,135 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       return _buildEmptyState(context);
     }
 
+    // Build components for actual travel legs (not same-station interchanges)
+    List<Widget> journeyComponents = [];
+    List<int> actualLegIndices = [];
+
+    // First, identify which legs are actual travel vs same-station interchanges
+    for (int index = 0; index < journey.legs.length; index++) {
+      final leg = journey.legs[index];
+
+      // Skip legs that are same-station interchanges (same origin and destination)
+      bool isSameStationInterchange =
+          leg.origin.id == leg.destination.id &&
+          leg.origin.name == leg.destination.name;
+
+      if (!isSameStationInterchange) {
+        actualLegIndices.add(index);
+      }
+    }
+
+    // Build components for actual legs
+    for (int i = 0; i < actualLegIndices.length; i++) {
+      final legIndex = actualLegIndices[i];
+      final leg = journey.legs[legIndex];
+      final isFirst = i == 0;
+      final isLast = i == actualLegIndices.length - 1;
+
+      // Add origin component for first actual leg
+      if (isFirst) {
+        journeyComponents.add(_buildOriginComponent(context, leg.origin));
+      }
+
+      // Check if there's an interchange between this leg and the previous actual leg
+      if (!isFirst) {
+        final previousLegIndex = actualLegIndices[i - 1];
+        final previousLeg = journey.legs[previousLegIndex];
+
+        // Check if we need to show an interchange component
+        bool shouldShowInterchange = false;
+        String? platformChangeText;
+
+        // Case 1: There are legs between previous and current that represent interchanges
+        if (legIndex - previousLegIndex > 1) {
+          // Find the interchange leg(s) between them
+          for (
+            int interchangeIndex = previousLegIndex + 1;
+            interchangeIndex < legIndex;
+            interchangeIndex++
+          ) {
+            final interchangeLeg = journey.legs[interchangeIndex];
+
+            // If this is a same-station interchange
+            if (interchangeLeg.origin.id == interchangeLeg.destination.id &&
+                interchangeLeg.origin.name == interchangeLeg.destination.name) {
+              shouldShowInterchange = true;
+              platformChangeText = _getPlatformChangeText(
+                interchangeLeg,
+                interchangeIndex,
+                journey.legs,
+              );
+              break;
+            }
+          }
+        }
+        // Case 2: Direct connection between different modes (e.g., walking to transit)
+        else if (previousLeg.destination.id == leg.origin.id &&
+            previousLeg.destination.name == leg.origin.name &&
+            ((previousLeg.isWalking == true && leg.isWalking != true) ||
+                (previousLeg.isWalking != true && leg.isWalking == true) ||
+                (previousLeg.isWalking != true &&
+                    leg.isWalking != true &&
+                    previousLeg.lineName != leg.lineName))) {
+          shouldShowInterchange = true;
+
+          // Check for platform changes
+          if (previousLeg.arrivalPlatformEffective.isNotEmpty &&
+              leg.departurePlatformEffective.isNotEmpty &&
+              previousLeg.arrivalPlatformEffective !=
+                  leg.departurePlatformEffective) {
+            platformChangeText =
+                'Platform change: ${previousLeg.arrivalPlatformEffective} to ${leg.departurePlatformEffective}';
+          }
+        }
+
+        // Only add interchange component if it should be shown and it's not an empty container
+        if (shouldShowInterchange) {
+          final interchangeWidget = _buildInterchangeComponent(
+            context,
+            previousLeg, // Arriving leg
+            leg, // Departing leg
+            platformChangeText,
+          );
+
+          // Only add if it's not a SizedBox.shrink or empty container
+          if (interchangeWidget is! SizedBox ||
+              (interchangeWidget as SizedBox).height != 0) {
+            journeyComponents.add(interchangeWidget);
+          }
+        }
+      }
+
+      // Add the actual leg component
+      if (leg.isWalking == true) {
+        journeyComponents.add(
+          _buildWalkingLegCard(context, leg, legIndex, journey.legs),
+        );
+      } else {
+        journeyComponents.add(
+          _buildLegCard(context, leg, legIndex, journey.legs),
+        );
+      }
+
+      // Add connection line if not last
+      if (!isLast) {
+        // journeyComponents.add(_buildConnectionLine(context));
+      }
+
+      // Add destination component for last actual leg
+      if (isLast) {
+        journeyComponents.add(
+          _buildDestinationComponent(context, leg.destination),
+        );
+      }
+    }
+
     return ListView.builder(
       controller: scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: journey.legs.length,
+      itemCount: journeyComponents.length,
       itemBuilder: (context, index) {
-        final leg = journey.legs[index];
-        final isLast = index == journey.legs.length - 1;
-        final isFirst = index == 0;
-        if (leg.distance == null || leg.distance == 0) {
-          return Column(
-            children: [
-              if (isFirst) _buildOriginComponent(context, leg.origin),
-              if (!isFirst)
-                _buildInterchangeComponent(
-                  context,
-                  journey.legs[index - 1],
-                  leg,
-                  _getPlatformChangeText(leg, index, journey.legs),
-                ),
-              if (leg.isWalking == true)
-                _buildWalkingLegCard(context, leg, index, journey.legs),
-              if (!(leg.isWalking == true))
-                _buildLegCard(context, leg, index, journey.legs),
-              if (!isLast) _buildConnectionLine(context),
-              if (isLast) _buildDestinationComponent(context, leg.destination),
-            ],
-          );
-        } else {
-          return Container();
-        }
+        return journeyComponents[index];
       },
     );
   }
@@ -277,9 +377,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     String? platformChangeText,
   ) {
     Color arrivalTimeColor = Theme.of(context).colorScheme.onSurface;
-    Color departureTimeColor = Theme.of(context).colorScheme.onSurface;
+    Color departureTimeColor = Theme.of(context).colorScheme.onPrimary;
     Color arrivalPlatformColor = Theme.of(context).colorScheme.onSurface;
-    Color departurePlatformColor = Theme.of(context).colorScheme.onSurface;
+    Color departurePlatformColor = Theme.of(context).colorScheme.onPrimary;
 
     if (arrivingLeg.arrivalDelayMinutes != null) {
       if (arrivingLeg.arrivalDelayMinutes! > 10) {
@@ -293,7 +393,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       if (departingLeg.departureDelayMinutes! > 10) {
         departureTimeColor = Theme.of(context).colorScheme.error;
       } else if (departingLeg.departureDelayMinutes! > 0) {
-        departureTimeColor = Theme.of(context).colorScheme.tertiary;
+        departureTimeColor = Theme.of(context).colorScheme.onPrimary;
       }
     }
 
@@ -306,79 +406,218 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       departurePlatformColor = Theme.of(context).colorScheme.error;
     }
 
-    return Card(
-      margin: EdgeInsets.all(24),
-      child: Column(
-        children: [
-          //Name
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondary,
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    TextTheme textTheme = Theme.of(context).textTheme;
 
-              borderRadius: BorderRadius.all(Radius.circular(24)),
-            ),
-            child: Text(
-              departingLeg.origin.name,
-              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                color: Theme.of(context).colorScheme.onSecondary,
-              ),
-            ),
-          ),
-          //Gleis Ankunft + Zeit Ankunft
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      children: [
+        SizedBox(
+          height: 220, // Reduced from 300
+          child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: 8,
-                children: [
-                  Text(
-                    arrivingLeg.effectiveArrival,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium!.copyWith(color: arrivalTimeColor),
+              Flexible(
+                flex: 60,
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    color: colorScheme.surfaceContainerHighest,
                   ),
-                  Text('Interchange: '),
-
-                  Text(
-                    departingLeg.effectiveDeparture,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium!.copyWith(color: departureTimeColor),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0), // Reduced from 8.0
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                        color: colorScheme.surfaceContainerLowest,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16,4,16,4), // Reduced from 16
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Arrival ' + arrivingLeg.effectiveArrivalFormatted,
+                              style: textTheme.titleMedium!.copyWith(
+                                color: arrivalTimeColor,
+                              ),
+                            ),
+                            if (arrivingLeg.arrivalPlatform == null)
+                              Text('at the Station', style: textTheme.bodySmall),
+                            if (arrivingLeg.arrivalPlatform != null)
+                              Text(
+                                'Platform ' + arrivingLeg.effectiveArrivalPlatform,
+                                style: textTheme.bodySmall!.copyWith(
+                                  color: arrivalPlatformColor,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: 8,
-                children: [
-                  Text(
-                    arrivingLeg.arrivalPlatformEffective,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: arrivalPlatformColor,
+              Flexible(
+                flex: 120,
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    color: colorScheme.surfaceContainerLowest,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0), // Reduced from 24.0
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                departingLeg.origin.name,
+                                style: textTheme.headlineMedium,
+                              ),
+                              if (departingLeg.departureDateTime
+                                      .difference(arrivingLeg.arrivalDateTime)
+                                      .inMinutes <
+                                  4)
+                                Text(
+                                  'Interchange Time: ' +
+                                      departingLeg.departureDateTime
+                                          .difference(arrivingLeg.arrivalDateTime)
+                                          .inMinutes
+                                          .toString() +
+                                      ' min',
+                                  style: textTheme.titleSmall!.copyWith(color: colorScheme.error),
+                                ),
+                                if (departingLeg.departureDateTime
+                                      .difference(arrivingLeg.arrivalDateTime)
+                                      .inMinutes >=
+                                  4)
+                                Text(
+                                  'Interchange Time: ' +
+                                      departingLeg.departureDateTime
+                                          .difference(arrivingLeg.arrivalDateTime)
+                                          .inMinutes
+                                          .toString() +
+                                      ' min',
+                                  style: textTheme.titleSmall,
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 8), // Reduced from 16
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            height: 60, // Reduced from 80
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: 16,
+                              children: [
+                                if (departingLeg.lineName != null &&
+                                    departingLeg.direction != null)
+                                  DottedBorder(
+                                    options: RoundedRectDottedBorderOptions(
+                                      radius: Radius.circular(16),
+                                    ),
+                                    child: Container(
+                                      alignment: Alignment.centerLeft,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(24),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0), // Reduced from 8.0
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          spacing: 2,
+                                          children: [
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(8),
+                                                ),
+                                                color: colorScheme.tertiaryContainer,
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.fromLTRB(4, 1, 4, 1),
+                                                child: Text(
+                                                  departingLeg.lineName!,
+                                                  style: textTheme.titleSmall,
+                                                ),
+                                              ),
+                                            ),
+                                            Text(departingLeg.direction!, style: textTheme.bodySmall,),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(16),
+                                    ),
+                                    color: colorScheme.primary,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(16,4,16,4), // Reduced from 16
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Departure ' +
+                                              departingLeg.effectiveDepartureFormatted,
+                                          style: textTheme.titleMedium!.copyWith(
+                                            color: departureTimeColor,
+                                          ),
+                                        ),
+                                        if (departingLeg.departurePlatform == null)
+                                          Text(
+                                            'at the Station',
+                                            style: textTheme.bodyMedium!.copyWith(
+                                              color: colorScheme.onPrimary),
+                                          ),
+                                        if (departingLeg.departurePlatform != null)
+                                          Text(
+                                            'Platform ' +
+                                                departingLeg.effectiveDeparturePlatform,
+                                            style: textTheme.bodyMedium!.copyWith(
+                                              color: departurePlatformColor,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    departingLeg.departureDateTime
-                            .difference(arrivingLeg.arrivalDateTime)
-                            .inMinutes
-                            .toString() +
-                        ' minutes',
-                  ),
-                  Text(
-                    departingLeg.departurePlatformEffective,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                      color: departurePlatformColor,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
-          //Umstiegszeit
-          //Gleis Abfahrt + Zeit Abfahrt
-        ],
-      ),
+        ),
+        SizedBox(height: 8),
+      ],
     );
   }
 

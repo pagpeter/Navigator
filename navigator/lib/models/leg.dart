@@ -128,6 +128,28 @@ class Leg {
   String get effectiveArrivalPlatform =>
       arrivalPlatform ?? plannedArrivalPlatform ?? '';
 
+
+      String get effectiveDepartureFormatted {
+  final isoString = effectiveDeparture;
+  try {
+    final dateTime = DateTime.parse(isoString);
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  } catch (e) {
+    return 'unknown';
+  }
+}
+
+// Similarly for arrival:
+String get effectiveArrivalFormatted {
+  final isoString = effectiveArrival;
+  try {
+    final dateTime = DateTime.parse(isoString);
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  } catch (e) {
+    return 'unknown';
+  }
+}
+
   @override
   String toString() {
     if (isWalking == true) {

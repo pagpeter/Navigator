@@ -255,6 +255,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       }
     }
 
+    final List<String> previousRil100Ids = List.empty();
     // Build components for actual legs
     for (int i = 0; i < actualLegIndices.length; i++) {
       final legIndex = actualLegIndices[i];
@@ -274,6 +275,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
         // Check if we need to show an interchange component
         bool shouldShowInterchange = false;
+        bool showInterchangeTime = true;
         String? platformChangeText;
 
         // Case 1: There are legs between previous and current that represent interchanges
@@ -308,6 +310,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                     leg.isWalking != true &&
                     previousLeg.lineName != leg.lineName))) {
           shouldShowInterchange = true;
+          showInterchangeTime = false;
 
           // Check for platform changes
           if (previousLeg.arrivalPlatformEffective.isNotEmpty &&
@@ -320,19 +323,33 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         }
 
         // Only add interchange component if it should be shown and it's not an empty container
+        Widget interchangeWidget;
         if (shouldShowInterchange) {
-          final interchangeWidget = _buildInterchangeComponent(
+          interchangeWidget = _buildInterchangeComponent(
             context,
             previousLeg, // Arriving leg
             leg, // Departing leg
             platformChangeText,
+            showInterchangeTime
           );
+
+        for(int i = 0; i < previousRil100Ids.length; i++)
+          {
+            if(previousRil100Ids[i] == leg.origin.ril100Ids[i] && shouldShowInterchange)
+            {
+              interchangeWidget = _buildInterchangeComponent(context, journey.legs[previousLegIndex - 1], leg, platformChangeText, showInterchangeTime);
+            }
+          }
+          
+
 
           // Only add if it's not a SizedBox.shrink or empty container
           if (interchangeWidget is! SizedBox ||
               (interchangeWidget as SizedBox).height != 0) {
             journeyComponents.add(interchangeWidget);
           }
+
+
         }
       }
 
@@ -375,6 +392,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     Leg arrivingLeg,
     Leg departingLeg,
     String? platformChangeText,
+    bool showInterchangeTime
   ) {
     Color arrivalTimeColor = Theme.of(context).colorScheme.onSurface;
     Color departureTimeColor = Theme.of(context).colorScheme.onPrimary;
@@ -408,15 +426,22 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
+    double height = 220;
+    int upperFlex = 60;
+    if(!showInterchangeTime)
+    {
+      height -= 21;
+      upperFlex += 18;
+    }
 
     return Column(
       children: [
         SizedBox(
-          height: 220, // Reduced from 300
+          height: height, // Reduced from 300
           child: Column(
             children: [
               Flexible(
-                flex: 60,
+                flex: upperFlex,
                 child: Container(
                   alignment: Alignment.centerLeft,
                   decoration: BoxDecoration(
@@ -490,6 +515,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                       .difference(arrivingLeg.arrivalDateTime)
                                       .inMinutes <
                                   4)
+                                if(showInterchangeTime)
                                 Text(
                                   'Interchange Time: ' +
                                       departingLeg.departureDateTime
@@ -503,13 +529,14 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                       .difference(arrivingLeg.arrivalDateTime)
                                       .inMinutes >=
                                   4)
+                                if(showInterchangeTime)
                                 Text(
                                   'Interchange Time: ' +
                                       departingLeg.departureDateTime
                                           .difference(arrivingLeg.arrivalDateTime)
                                           .inMinutes
                                           .toString() +
-                                      ' min',
+                                      ' min', 
                                   style: textTheme.titleSmall,
                                 ),
                             ],

@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/leg.dart';
+import 'package:navigator/models/location.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 import 'dart:convert';
 import 'package:navigator/models/station.dart';
@@ -264,7 +265,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
       // Add origin component for first actual leg
       if (isFirst) {
-        journeyComponents.add(_buildOriginComponent(context, leg.origin));
+        journeyComponents.add(_buildOriginComponent(context, leg));
       }
 
       // Check if there's an interchange between this leg and the previous actual leg
@@ -324,31 +325,44 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         }
 
         // Check if we're in the same station complex - this affects interchange logic
-        bool isWithinStationComplex = previousLeg.destination.ril100Ids.isNotEmpty && 
+        bool isWithinStationComplex =
+            previousLeg.destination.ril100Ids.isNotEmpty &&
             leg.origin.ril100Ids.isNotEmpty &&
-            _haveSameRil100Station(previousLeg.destination.ril100Ids, leg.origin.ril100Ids);
+            _haveSameRil100Station(
+              previousLeg.destination.ril100Ids,
+              leg.origin.ril100Ids,
+            );
 
         // Special handling: If we're in the same station complex, consolidate the interchange
         if (isWithinStationComplex) {
           // Look backwards to find the last non-walking leg that brought us to this station complex
-          for (int searchIndex = previousLegIndex; searchIndex >= 0; searchIndex--) {
+          for (
+            int searchIndex = previousLegIndex;
+            searchIndex >= 0;
+            searchIndex--
+          ) {
             final searchLeg = journey.legs[searchIndex];
-            
+
             // If this leg's destination is in the same station complex and it's not a walking leg
             if (searchLeg.isWalking != true &&
-                _haveSameRil100Station(searchLeg.destination.ril100Ids, leg.origin.ril100Ids)) {
+                _haveSameRil100Station(
+                  searchLeg.destination.ril100Ids,
+                  leg.origin.ril100Ids,
+                )) {
               arrivingLeg = searchLeg;
-              
+
               // Only show interchange if the current leg is not walking (i.e., we're exiting the station complex)
               if (leg.isWalking != true) {
                 shouldShowInterchange = true;
                 showInterchangeTime = true;
-                
+
                 // Check for platform changes between the actual arriving leg and departing leg
                 if (searchLeg.arrivalPlatformEffective.isNotEmpty &&
                     leg.departurePlatformEffective.isNotEmpty &&
-                    searchLeg.arrivalPlatformEffective != leg.departurePlatformEffective) {
-                  platformChangeText = 'Platform change: ${searchLeg.arrivalPlatformEffective} to ${leg.departurePlatformEffective}';
+                    searchLeg.arrivalPlatformEffective !=
+                        leg.departurePlatformEffective) {
+                  platformChangeText =
+                      'Platform change: ${searchLeg.arrivalPlatformEffective} to ${leg.departurePlatformEffective}';
                 }
               } else {
                 // This is a walking leg within the station complex, don't show interchange yet
@@ -366,7 +380,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             arrivingLeg, // This might be a leg from earlier if we're consolidating within station complex
             departingLeg,
             platformChangeText,
-            showInterchangeTime
+            showInterchangeTime,
           );
 
           // Only add if it's not a SizedBox.shrink or empty container
@@ -379,12 +393,15 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
       // Check if this leg should be displayed
       bool shouldDisplayLeg = true;
-      
+
       // Hide walking legs that are within the same station complex
-      if (leg.isWalking == true && 
-          leg.origin.ril100Ids.isNotEmpty && 
+      if (leg.isWalking == true &&
+          leg.origin.ril100Ids.isNotEmpty &&
           leg.destination.ril100Ids.isNotEmpty &&
-          _haveSameRil100Station(leg.origin.ril100Ids, leg.destination.ril100Ids)) {
+          _haveSameRil100Station(
+            leg.origin.ril100Ids,
+            leg.destination.ril100Ids,
+          )) {
         shouldDisplayLeg = false;
       }
 
@@ -403,9 +420,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
       // Add destination component for last actual leg
       if (isLast) {
-        journeyComponents.add(
-          _buildDestinationComponent(context, leg.destination),
-        );
+        journeyComponents.add(_buildDestinationComponent(context, leg));
       }
     }
 
@@ -420,11 +435,14 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   // Helper method to check if two lists of RIL100 IDs have any overlap
-  bool _haveSameRil100Station(List<String> ril100Ids1, List<String> ril100Ids2) {
+  bool _haveSameRil100Station(
+    List<String> ril100Ids1,
+    List<String> ril100Ids2,
+  ) {
     if (ril100Ids1.isEmpty || ril100Ids2.isEmpty) {
       return false;
     }
-    
+
     // Check if any RIL100 ID from the first list matches any from the second list
     for (String id1 in ril100Ids1) {
       for (String id2 in ril100Ids2) {
@@ -433,7 +451,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         }
       }
     }
-    
+
     return false;
   }
 
@@ -442,12 +460,14 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     Leg arrivingLeg,
     Leg departingLeg,
     String? platformChangeText,
-    bool showInterchangeTime
+    bool showInterchangeTime,
   ) {
     Color arrivalTimeColor = Theme.of(context).colorScheme.onSurface;
-    Color departureTimeColor = Theme.of(context).colorScheme.onPrimary;
+    Color departureTimeColor = Theme.of(context).colorScheme.onPrimaryContainer;
     Color arrivalPlatformColor = Theme.of(context).colorScheme.onSurface;
-    Color departurePlatformColor = Theme.of(context).colorScheme.onPrimary;
+    Color departurePlatformColor = Theme.of(
+      context,
+    ).colorScheme.onPrimaryContainer;
 
     if (arrivingLeg.arrivalDelayMinutes != null) {
       if (arrivingLeg.arrivalDelayMinutes! > 10) {
@@ -461,7 +481,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       if (departingLeg.departureDelayMinutes! > 10) {
         departureTimeColor = Theme.of(context).colorScheme.error;
       } else if (departingLeg.departureDelayMinutes! > 0) {
-        departureTimeColor = Theme.of(context).colorScheme.onPrimary;
+        departureTimeColor = Theme.of(context).colorScheme.onPrimaryContainer;
       }
     }
 
@@ -478,10 +498,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     TextTheme textTheme = Theme.of(context).textTheme;
     double height = 220;
     int upperFlex = 60;
-    if(!showInterchangeTime)
-    {
-      height -= 21;
-      upperFlex += 18;
+    if (!showInterchangeTime) {
+      height -= 20;
+      upperFlex += 8;
     }
 
     return Column(
@@ -509,22 +528,32 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                         color: colorScheme.surfaceContainerLowest,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16,4,16,4), // Reduced from 16
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          4,
+                          16,
+                          4,
+                        ), // Reduced from 16
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Arrival ' + arrivingLeg.effectiveArrivalFormatted,
+                              'Arrival ' +
+                                  arrivingLeg.effectiveArrivalFormatted,
                               style: textTheme.titleMedium!.copyWith(
                                 color: arrivalTimeColor,
                               ),
                             ),
                             if (arrivingLeg.arrivalPlatform == null)
-                              Text('at the Station', style: textTheme.bodySmall),
+                              Text(
+                                'at the Station',
+                                style: textTheme.bodySmall,
+                              ),
                             if (arrivingLeg.arrivalPlatform != null)
                               Text(
-                                'Platform ' + arrivingLeg.effectiveArrivalPlatform,
+                                'Platform ' +
+                                    arrivingLeg.effectiveArrivalPlatform,
                                 style: textTheme.bodySmall!.copyWith(
                                   color: arrivalPlatformColor,
                                 ),
@@ -548,7 +577,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                     color: colorScheme.surfaceContainerLowest,
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0), // Reduced from 24.0
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8.0,
+                    ), // Reduced from 24.0
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -565,30 +596,36 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                       .difference(arrivingLeg.arrivalDateTime)
                                       .inMinutes <
                                   4)
-                                if(showInterchangeTime)
-                                Text(
-                                  'Interchange Time: ' +
-                                      departingLeg.departureDateTime
-                                          .difference(arrivingLeg.arrivalDateTime)
-                                          .inMinutes
-                                          .toString() +
-                                      ' min',
-                                  style: textTheme.titleSmall!.copyWith(color: colorScheme.error),
-                                ),
-                                if (departingLeg.departureDateTime
+                                if (showInterchangeTime)
+                                  Text(
+                                    'Interchange Time: ' +
+                                        departingLeg.departureDateTime
+                                            .difference(
+                                              arrivingLeg.arrivalDateTime,
+                                            )
+                                            .inMinutes
+                                            .toString() +
+                                        ' min',
+                                    style: textTheme.titleSmall!.copyWith(
+                                      color: colorScheme.error,
+                                    ),
+                                  ),
+                              if (departingLeg.departureDateTime
                                       .difference(arrivingLeg.arrivalDateTime)
                                       .inMinutes >=
                                   4)
-                                if(showInterchangeTime)
-                                Text(
-                                  'Interchange Time: ' +
-                                      departingLeg.departureDateTime
-                                          .difference(arrivingLeg.arrivalDateTime)
-                                          .inMinutes
-                                          .toString() +
-                                      ' min', 
-                                  style: textTheme.titleSmall,
-                                ),
+                                if (showInterchangeTime)
+                                  Text(
+                                    'Interchange Time: ' +
+                                        departingLeg.departureDateTime
+                                            .difference(
+                                              arrivingLeg.arrivalDateTime,
+                                            )
+                                            .inMinutes
+                                            .toString() +
+                                        ' min',
+                                    style: textTheme.titleSmall,
+                                  ),
                             ],
                           ),
                         ),
@@ -615,11 +652,14 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                         ),
                                       ),
                                       child: Padding(
-                                        padding: const EdgeInsets.all(8.0), // Reduced from 8.0
+                                        padding: const EdgeInsets.all(
+                                          8.0,
+                                        ), // Reduced from 8.0
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           spacing: 2,
                                           children: [
                                             Container(
@@ -627,17 +667,27 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                                 borderRadius: BorderRadius.all(
                                                   Radius.circular(8),
                                                 ),
-                                                color: colorScheme.tertiaryContainer,
+                                                color: colorScheme
+                                                    .tertiaryContainer,
                                               ),
                                               child: Padding(
-                                                padding: const EdgeInsets.fromLTRB(4, 1, 4, 1),
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                      4,
+                                                      1,
+                                                      4,
+                                                      1,
+                                                    ),
                                                 child: Text(
                                                   departingLeg.lineName!,
                                                   style: textTheme.titleSmall,
                                                 ),
                                               ),
                                             ),
-                                            Text(departingLeg.direction!, style: textTheme.bodySmall,),
+                                            Text(
+                                              departingLeg.direction!,
+                                              style: textTheme.bodySmall,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -648,34 +698,50 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                     borderRadius: BorderRadius.all(
                                       Radius.circular(16),
                                     ),
-                                    color: colorScheme.primary,
+                                    color: colorScheme.primaryContainer,
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(16,4,16,4), // Reduced from 16
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      4,
+                                      16,
+                                      4,
+                                    ), // Reduced from 16
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           'Departure ' +
-                                              departingLeg.effectiveDepartureFormatted,
-                                          style: textTheme.titleMedium!.copyWith(
-                                            color: departureTimeColor,
-                                          ),
+                                              departingLeg
+                                                  .effectiveDepartureFormatted,
+                                          style: textTheme.titleMedium!
+                                              .copyWith(
+                                                color: departureTimeColor,
+                                              ),
                                         ),
-                                        if (departingLeg.departurePlatform == null)
+                                        if (departingLeg.departurePlatform ==
+                                            null)
                                           Text(
                                             'at the Station',
-                                            style: textTheme.bodyMedium!.copyWith(
-                                              color: colorScheme.onPrimary),
+                                            style: textTheme.bodyMedium!
+                                                .copyWith(
+                                                  color: colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
                                           ),
-                                        if (departingLeg.departurePlatform != null)
+                                        if (departingLeg.departurePlatform !=
+                                            null)
                                           Text(
                                             'Platform ' +
-                                                departingLeg.effectiveDeparturePlatform,
-                                            style: textTheme.bodyMedium!.copyWith(
-                                              color: departurePlatformColor,
-                                            ),
+                                                departingLeg
+                                                    .effectiveDeparturePlatform,
+                                            style: textTheme.bodyMedium!
+                                                .copyWith(
+                                                  color: departurePlatformColor,
+                                                ),
                                           ),
                                       ],
                                     ),
@@ -698,12 +764,142 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     );
   }
 
-  Widget _buildOriginComponent(BuildContext context, Station s) {
-    return Container();
+  Widget _buildOriginComponent(BuildContext context, Leg l) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            spacing: 8,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                fit: FlexFit.tight,
+                child: Tooltip(
+                  message: l.origin.name,
+                  child: Text(
+                    l.origin.name,
+                    style: Theme.of(context).textTheme.titleLarge,
+                    maxLines: 2, // allow 2 lines if you want wrapping
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                  ),
+                ),
+              ),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.all(8),
+                    child: Column(
+                      children: [
+                        Text(
+                          l.effectiveDepartureFormatted,
+                          style: Theme.of(context).textTheme.titleMedium!
+                              .copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                        if (l.departurePlatformEffective.isNotEmpty)
+                          Text(
+                            'Platform ' + l.departurePlatformEffective,
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildDestinationComponent(BuildContext context, Station s) {
-    return Container();
+  Widget _buildDestinationComponent(BuildContext context, Leg l) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            spacing: 8,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                fit: FlexFit.tight,
+                child: Tooltip(
+                  message: l.destination.name,
+                  child: Text(
+                    l.destination.name,
+                    style: Theme.of(context).textTheme.titleLarge,
+                    maxLines: 2, // allow 2 lines if you want wrapping
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                  ),
+                ),
+              ),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.all(8),
+                    child: Column(
+                      children: [
+                        Text(
+                          l.effectiveArrivalFormatted,
+                          style: Theme.of(context).textTheme.titleMedium!
+                              .copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                        if (l.arrivalPlatformEffective.isNotEmpty)
+                          Text(
+                            'Platform ' + l.arrivalPlatformEffective,
+                            style: Theme.of(context).textTheme.bodyMedium!
+                                .copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildWalkingLegCard(

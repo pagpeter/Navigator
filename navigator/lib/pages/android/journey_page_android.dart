@@ -255,7 +255,6 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       }
     }
 
-    final List<String> previousRil100Ids = List.empty();
     // Build components for actual legs
     for (int i = 0; i < actualLegIndices.length; i++) {
       final legIndex = actualLegIndices[i];
@@ -277,6 +276,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         bool shouldShowInterchange = false;
         bool showInterchangeTime = true;
         String? platformChangeText;
+        Leg arrivingLeg = previousLeg;
+        Leg departingLeg = leg;
 
         // Case 1: There are legs between previous and current that represent interchanges
         if (legIndex - previousLegIndex > 1) {
@@ -322,51 +323,82 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           }
         }
 
-        // Only add interchange component if it should be shown and it's not an empty container
-        Widget interchangeWidget;
+        // Check if we're in the same station complex - this affects interchange logic
+        bool isWithinStationComplex = previousLeg.destination.ril100Ids.isNotEmpty && 
+            leg.origin.ril100Ids.isNotEmpty &&
+            _haveSameRil100Station(previousLeg.destination.ril100Ids, leg.origin.ril100Ids);
+
+        // Special handling: If we're in the same station complex, consolidate the interchange
+        if (isWithinStationComplex) {
+          // Look backwards to find the last non-walking leg that brought us to this station complex
+          for (int searchIndex = previousLegIndex; searchIndex >= 0; searchIndex--) {
+            final searchLeg = journey.legs[searchIndex];
+            
+            // If this leg's destination is in the same station complex and it's not a walking leg
+            if (searchLeg.isWalking != true &&
+                _haveSameRil100Station(searchLeg.destination.ril100Ids, leg.origin.ril100Ids)) {
+              arrivingLeg = searchLeg;
+              
+              // Only show interchange if the current leg is not walking (i.e., we're exiting the station complex)
+              if (leg.isWalking != true) {
+                shouldShowInterchange = true;
+                showInterchangeTime = true;
+                
+                // Check for platform changes between the actual arriving leg and departing leg
+                if (searchLeg.arrivalPlatformEffective.isNotEmpty &&
+                    leg.departurePlatformEffective.isNotEmpty &&
+                    searchLeg.arrivalPlatformEffective != leg.departurePlatformEffective) {
+                  platformChangeText = 'Platform change: ${searchLeg.arrivalPlatformEffective} to ${leg.departurePlatformEffective}';
+                }
+              } else {
+                // This is a walking leg within the station complex, don't show interchange yet
+                shouldShowInterchange = false;
+              }
+              break;
+            }
+          }
+        }
+
+        // Only add interchange component if it should be shown
         if (shouldShowInterchange) {
-          interchangeWidget = _buildInterchangeComponent(
+          Widget interchangeWidget = _buildInterchangeComponent(
             context,
-            previousLeg, // Arriving leg
-            leg, // Departing leg
+            arrivingLeg, // This might be a leg from earlier if we're consolidating within station complex
+            departingLeg,
             platformChangeText,
             showInterchangeTime
           );
-
-        for(int i = 0; i < previousRil100Ids.length; i++)
-          {
-            if(previousRil100Ids[i] == leg.origin.ril100Ids[i] && shouldShowInterchange)
-            {
-              interchangeWidget = _buildInterchangeComponent(context, journey.legs[previousLegIndex - 1], leg, platformChangeText, showInterchangeTime);
-            }
-          }
-          
-
 
           // Only add if it's not a SizedBox.shrink or empty container
           if (interchangeWidget is! SizedBox ||
               (interchangeWidget as SizedBox).height != 0) {
             journeyComponents.add(interchangeWidget);
           }
-
-
         }
       }
 
-      // Add the actual leg component
-      if (leg.isWalking == true) {
-        journeyComponents.add(
-          _buildWalkingLegCard(context, leg, legIndex, journey.legs),
-        );
-      } else {
-        journeyComponents.add(
-          _buildLegCard(context, leg, legIndex, journey.legs),
-        );
+      // Check if this leg should be displayed
+      bool shouldDisplayLeg = true;
+      
+      // Hide walking legs that are within the same station complex
+      if (leg.isWalking == true && 
+          leg.origin.ril100Ids.isNotEmpty && 
+          leg.destination.ril100Ids.isNotEmpty &&
+          _haveSameRil100Station(leg.origin.ril100Ids, leg.destination.ril100Ids)) {
+        shouldDisplayLeg = false;
       }
 
-      // Add connection line if not last
-      if (!isLast) {
-        // journeyComponents.add(_buildConnectionLine(context));
+      // Add the actual leg component only if it should be displayed
+      if (shouldDisplayLeg) {
+        if (leg.isWalking == true) {
+          journeyComponents.add(
+            _buildWalkingLegCard(context, leg, legIndex, journey.legs),
+          );
+        } else {
+          journeyComponents.add(
+            _buildLegCard(context, leg, legIndex, journey.legs),
+          );
+        }
       }
 
       // Add destination component for last actual leg
@@ -385,6 +417,24 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         return journeyComponents[index];
       },
     );
+  }
+
+  // Helper method to check if two lists of RIL100 IDs have any overlap
+  bool _haveSameRil100Station(List<String> ril100Ids1, List<String> ril100Ids2) {
+    if (ril100Ids1.isEmpty || ril100Ids2.isEmpty) {
+      return false;
+    }
+    
+    // Check if any RIL100 ID from the first list matches any from the second list
+    for (String id1 in ril100Ids1) {
+      for (String id2 in ril100Ids2) {
+        if (id1 == id2) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
   Widget _buildInterchangeComponent(

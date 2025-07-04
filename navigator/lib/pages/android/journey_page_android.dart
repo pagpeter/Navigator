@@ -172,7 +172,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         builder: (context, scrollController) {
           return Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
@@ -409,11 +409,11 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       if (shouldDisplayLeg) {
         if (leg.isWalking == true) {
           journeyComponents.add(
-            _buildWalkingLegCard(context, leg, legIndex, journey.legs),
+            _buildWalkingLegNew(context, leg, i , journey.legs),
           );
         } else {
           journeyComponents.add(
-            _buildLegCard(context, leg, legIndex, journey.legs),
+            LegWidget(leg: leg, lineColor: Colors.blue,),
           );
         }
       }
@@ -902,6 +902,60 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     );
   }
 
+  Widget _buildWalkingLegNew(BuildContext context, Leg leg, int index, List<Leg> legs)
+  {
+    if (leg.distance == null || leg.distance == 0) {
+      return const SizedBox.shrink();
+    }
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints)
+      {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Stack(
+            children: <Widget> [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(children: [
+                    SizedBox(width: (constraints.maxWidth / 100)* 12,),
+                    Icon(Icons.directions_walk),
+                    SizedBox(width: 8,),
+                    Text('Walk ' + leg.distance.toString() + 'm' + ' (' + _formatLegDuration(leg.departureDateTime, leg.arrivalDateTime) + ')'),
+                    Spacer(),
+                    IconButton.filled(
+                      onPressed: () => {},
+                      icon: Icon(Icons.map),
+                      color: Theme.of(context).colorScheme.tertiary,
+                      style: IconButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.tertiaryContainer),
+                    ),
+                  ],),
+                ) 
+              ),
+              Positioned.fill(
+                right: constraints.maxWidth / 100 * 88,
+                left: constraints.maxWidth / 100 * 6,
+                child: DottedBorder(
+                  options: RoundedRectDottedBorderOptions(radius: Radius.circular(24)),
+                  child: Container(
+                    height: constraints.maxHeight,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.all(Radius.circular(24)),
+                  ),),
+                ),)
+            ],
+          ),
+        );
+      }
+    );
+  }
+
   Widget _buildWalkingLegCard(
     BuildContext context,
     Leg leg,
@@ -983,6 +1037,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     );
   }
 
+  
   Widget _buildLegCard(
     BuildContext context,
     Leg leg,
@@ -1662,5 +1717,86 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     }
 
     return points;
+  }
+}
+
+class LegWidget extends StatefulWidget{
+  final Leg leg;
+  final Color lineColor;
+  const LegWidget({Key? key, required this.leg, required this.lineColor}) : super(key: key);
+  @override
+  State<LegWidget> createState() => _LegWidgetState();
+}
+
+class _LegWidgetState extends State<LegWidget> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) 
+  {
+    //if (widget.leg.distance == null || widget.leg.distance == 0) {
+      //return const SizedBox.shrink();
+    //}
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints)
+      {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Stack(
+            children: <Widget> [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                margin: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: widget.lineColor.withAlpha(100),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(children: [
+                    SizedBox(width: (constraints.maxWidth / 100)* 12,),
+                    Column(children: [
+                      //Line Chip
+                      if(widget.leg.lineName != null && widget.leg.lineName!.isNotEmpty)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: widget.lineColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8), 
+                        child: Text(widget.leg.lineName!))
+                        ,),
+                      //Features
+                      
+                      //Further Information
+                      //Stops Button
+                      //Stops based on is Expanded
+                      
+                    ],),
+                    Spacer(),
+                    IconButton.filled(
+                      onPressed: () => {},
+                      icon: Icon(Icons.map),
+                      color: Theme.of(context).colorScheme.tertiary,
+                      style: IconButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.tertiaryContainer),
+                    ),
+                  ],),
+                ) 
+              ),
+              Positioned.fill(
+                right: constraints.maxWidth / 100 * 88,
+                left: constraints.maxWidth / 100 * 6,
+                child: Container(
+                  height: constraints.maxHeight,
+                  decoration: BoxDecoration(
+                    color: widget.lineColor,
+                    borderRadius: BorderRadius.all(Radius.circular(24)),
+                ),),)
+            ],
+          ),
+        );
+      }
+    );
   }
 }

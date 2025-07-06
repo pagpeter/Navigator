@@ -28,6 +28,9 @@ class JourneyPageAndroid extends StatefulWidget {
 
 class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     with SingleTickerProviderStateMixin {
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
+
   // Sheet controller for the draggable bottom sheet
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
@@ -51,26 +54,43 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   @override
   void initState() {
     super.initState();
+    _alignPositionOnUpdate = AlignOnUpdate.never;
+    _alignPositionStreamController = StreamController<double?>();
     _initializeLocationTracking();
   }
 
+  @override
+  void dispose() {
+    // Clean up the stream controllers and subscription
+    _locationStreamController.close();
+    _headingStreamController.close();
+    _geolocatorSubscription?.cancel();
+    _alignPositionStreamController.close();
+    super.dispose();
+  }
+
   void animatedMapMove(LatLng destLocation, double destZoom) {
+    // Store the destination values
     final latTween = Tween<double>(
-      begin: _currentCenter.latitude,
+      begin: _mapController.camera.center.latitude,
       end: destLocation.latitude,
     );
     final lngTween = Tween<double>(
-      begin: _currentCenter.longitude,
+      begin: _mapController.camera.center.longitude,
       end: destLocation.longitude,
     );
-    final zoomTween = Tween<double>(begin: _currentZoom, end: destZoom);
+    final zoomTween = Tween<double>(
+        begin: _mapController.camera.zoom,
+        end: destZoom
+    );
 
-    var controller = AnimationController(
+    // Create and store controller locally to avoid conflicts
+    final controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    Animation<double> animation = CurvedAnimation(
+    final animation = CurvedAnimation(
       parent: controller,
       curve: Curves.easeOut,
     );
@@ -82,9 +102,13 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
       );
     });
 
-    controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Update the current values after animation completes
+        _currentCenter = destLocation;
+        _currentZoom = destZoom;
+        controller.dispose();
+      } else if (status == AnimationStatus.dismissed) {
         controller.dispose();
       }
     });
@@ -139,15 +163,6 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
         _currentUserLocation = position.latLng;
       }
     });
-  }
-
-  @override
-  void dispose() {
-    // Clean up the stream controllers and subscription
-    _locationStreamController.close();
-    _headingStreamController.close();
-    _geolocatorSubscription?.cancel();
-    super.dispose();
   }
 
   @override
@@ -1436,44 +1451,55 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildMapView(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: _currentUserLocation ?? _currentCenter,
-        initialZoom: _currentZoom,
-        minZoom: 3.0,
-        maxZoom: 18.0,
-        interactionOptions: const InteractionOptions(
-          flags:
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _currentUserLocation ?? _currentCenter,
+            initialZoom: _currentZoom,
+            minZoom: 3.0,
+            maxZoom: 18.0,
+            interactionOptions: const InteractionOptions(
+              flags:
               InteractiveFlag.drag |
               InteractiveFlag.flingAnimation |
               InteractiveFlag.pinchZoom |
               InteractiveFlag.doubleTapZoom |
               InteractiveFlag.rotate,
-          rotationThreshold: 20.0,
-          pinchZoomThreshold: 0.5,
-          pinchMoveThreshold: 40.0,
-        ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.app',
-        ),
-        // Add the polyline layer with route path
-        _buildPolylineLayer(),
-        CurrentLocationLayer(
-          alignPositionOnUpdate: AlignOnUpdate.never,
-          alignDirectionOnUpdate: AlignOnUpdate.never,
-          style: LocationMarkerStyle(
-            marker: DefaultLocationMarker(color: Colors.lightBlue[800]!),
-            markerSize: const Size(20, 20),
-            markerDirection: MarkerDirection.heading,
-            accuracyCircleColor: Colors.blue[200]!.withAlpha(0x20),
-            headingSectorColor: Colors.blue[400]!.withAlpha(0x90),
-            headingSectorRadius: 60,
+              rotationThreshold: 20.0,
+              pinchZoomThreshold: 0.5,
+              pinchMoveThreshold: 40.0,
+            ),
+            onPositionChanged: (MapCamera camera, bool hasGesture) {
+              if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
+                setState(
+                      () => _alignPositionOnUpdate = AlignOnUpdate.never,
+                );
+              }
+            },
           ),
+          children: [
+            TileLayer(
+              urlTemplate:
+              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.app',
+            ),
+            // Add the polyline layer with route path
+            _buildPolylineLayer(),
+            CurrentLocationLayer(
+              alignPositionStream: _alignPositionStreamController.stream,
+              alignPositionOnUpdate: _alignPositionOnUpdate,
+              style: LocationMarkerStyle(
+                marker: DefaultLocationMarker(color: Colors.lightBlue[800]!),
+                markerSize: const Size(20, 20),
+                markerDirection: MarkerDirection.heading,
+                accuracyCircleColor: Colors.blue[200]!.withAlpha(0x20),
+                headingSectorColor: Colors.blue[400]!.withAlpha(0x90),
+                headingSectorRadius: 60,
+              ),
+            ),
+          ],
         ),
         _buildLocationButton(context),
       ],
@@ -1543,16 +1569,28 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   Widget _buildLocationButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomRight,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20.0, bottom: 116.0),
-        child: FloatingActionButton(
-          shape: const CircleBorder(),
-          onPressed: _centerOnUserLocation,
-          child: Icon(
-            Icons.my_location,
-            color: Theme.of(context).colorScheme.tertiary.withOpacity(0.5),
+    return Positioned(
+      right: 20.0,
+      bottom: 116.0,
+      child: Material(
+        elevation: 4.0,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.hardEdge,
+        color: Theme.of(context).colorScheme.surface,
+        child: InkWell(
+          onTap: () {
+            _centerOnUserLocation();
+          },
+          child: Container(
+            width: 56.0,
+            height: 56.0,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.my_location,
+              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.5),
+            ),
           ),
         ),
       ),
@@ -1569,13 +1607,23 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
   }
 
   void _centerOnUserLocation() {
+    print("Location button pressed");
     if (_currentUserLocation != null) {
-      // Use the existing animatedMapMove method for smooth transition
-      animatedMapMove(_currentUserLocation!, 18.0);
+      print("Centering on location: $_currentUserLocation");
 
-      // Update the current center and zoom values
-      _currentCenter = _currentUserLocation!;
-      _currentZoom = 18.0;
+      setState(() {
+        _currentCenter = _currentUserLocation!;
+        _currentZoom = 18.0;
+        _alignPositionOnUpdate = AlignOnUpdate.always;
+      });
+
+      // Use the stream controller to trigger alignment
+      _alignPositionStreamController.add(18.0);
+
+      // Also use animatedMapMove for smooth transition
+      animatedMapMove(_currentUserLocation!, 18.0);
+    } else {
+      print("Cannot center: current user location is null");
     }
   }
 

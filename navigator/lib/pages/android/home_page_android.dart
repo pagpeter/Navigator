@@ -32,6 +32,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   double _currentZoom = 10;
   final MapController _mapController = MapController();
   List<Polyline> _lines = [];
+  List<Station> _stations = [];
+  bool showStationLabels = true;
 
   //Map Options
   bool showLightRail = true;
@@ -55,6 +57,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
   void initState() {
     super.initState();
     initiateLines();
+    fetchStations();
 
     _alignPositionOnUpdate = AlignOnUpdate.always;
     _alignPositionStreamController = StreamController<double?>();
@@ -201,6 +204,29 @@ class _HomePageAndroidState extends State<HomePageAndroid>
     }
   }
 
+  Future<void> fetchStations() async {
+    final location = await widget.page.service.getCurrentLocation();
+
+    if (location.latitude != 0 && location.longitude != 0) {
+      try {
+        final transportTypes = ['subway', 'light_rail', 'tram'];
+        final fetchedStations = await widget.page.service.overpass.fetchStationsByType(
+          lat: location.latitude,
+          lon: location.longitude,
+          radius: 50000
+        );
+
+        setState(() {
+          _stations = fetchedStations;
+        });
+
+        print("✅ Loaded ${_stations.length} station labels");
+      } catch (e) {
+        print('Error fetching stations: $e');
+      }
+    }
+  }
+
   void animatedMapMove(LatLng destLocation, double destZoom) {
     final latTween = Tween<double>(
       begin: _currentCenter.latitude,
@@ -249,6 +275,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
       });
 
       animatedMapMove(newCenter, 12.0);
+      fetchStations();
     }
   }
 
@@ -268,6 +295,17 @@ class _HomePageAndroidState extends State<HomePageAndroid>
     setState(() {
       _searchResults = results;
     });
+  }
+
+  IconData _getTransportIcon(Station station) {
+    if (station.subway) return Icons.subway;
+    if (station.tram) return Icons.tram;
+    if (station.suburban) return Icons.directions_subway;
+    if (station.national || station.nationalExpress) return Icons.train;
+    if (station.regional || station.regionalExpress) return Icons.directions_railway;
+    if (station.ferry) return Icons.directions_ferry;
+    if (station.bus) return Icons.directions_bus;
+    return Icons.location_on;
   }
 
   @override
@@ -341,16 +379,19 @@ class _HomePageAndroidState extends State<HomePageAndroid>
               maxZoom: 18.0,
               interactionOptions: InteractionOptions(
                 flags: InteractiveFlag.drag | InteractiveFlag.flingAnimation | InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom | InteractiveFlag.rotate,
-                rotationThreshold: 20.0,  // Higher threshold to make rotation less sensitive
-                pinchZoomThreshold: 0.5,  // Adjust zoom sensitivity
-                pinchMoveThreshold: 40.0, // Higher threshold to reduce accidental moves while pinching
+                rotationThreshold: 20.0,
+                pinchZoomThreshold: 0.5,
+                pinchMoveThreshold: 40.0,
               ),
               onPositionChanged: (MapCamera camera, bool hasGesture) {
                 if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
-                  setState(
-                        () => _alignPositionOnUpdate = AlignOnUpdate.never,
-                  );
+                  setState(() => _alignPositionOnUpdate = AlignOnUpdate.never);
                 }
+                // Update current zoom level
+                setState(() {
+                  _currentZoom = camera.zoom;
+                  _currentCenter = camera.center;
+                });
               },
             ),
                   children: [
@@ -409,7 +450,66 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     if(showFerry)
                     PolylineLayer(polylines: _ferryLines),
                     if(showFunicular)
-                    PolylineLayer(polylines: _funicularLines)
+                    PolylineLayer(polylines: _funicularLines),
+                    if (showStationLabels && _currentZoom > 14) // Only show labels when zoomed in enough
+                      MarkerLayer(
+                        markers: _stations.map((station) {
+                          return Marker(
+                            point: LatLng(station.latitude, station.longitude),
+                            width: 150,
+                            height: 60,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: colors.surfaceContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    station.name,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: colors.onSurfaceVariant,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: colors.primary,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: colors.primary.withOpacity(0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(
+                                    _getTransportIcon(station),
+                                    color: colors.onPrimary,
+                                    size: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),
@@ -484,6 +584,18 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                       child: ListView(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         children: [
+                          CheckboxListTile(
+                            title: const Text('Show Station Labels'),
+                            value: showStationLabels,
+                            onChanged: (bool? value) {
+                              setModalState(() {
+                                showStationLabels = value!;
+                              });
+                              setState(() {
+                                showStationLabels = value!;
+                              });
+                            },
+                          ),
                           CheckboxListTile(
                                 title: const Text('Show S-Bahn'),
                                 value: showLightRail,

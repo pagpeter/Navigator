@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/subway_line.dart';
 
+import '../models/station.dart';
+
 class Overpassapi {
   Future<List<SubwayLine>> fetchSubwayLinesWithColors({
     required double lat,
@@ -134,5 +136,66 @@ class Overpassapi {
     }
     
     return subwayLines;
+  }
+
+  Future<List<Station>> fetchStationsByType({
+    required double lat,
+    required double lon,
+    required int radius,
+  }) async {
+    // Only fetch railway stations, subway entrances, and tram stops
+    final query = '''
+[out:json][timeout:60];
+(
+  node["railway"="station"](around:$radius,$lat,$lon);
+  node["railway"="subway_entrance"](around:$radius,$lat,$lon);
+  node["railway"="tram_stop"](around:$radius,$lat,$lon);
+)->.stations;
+.stations out body;
+''';
+
+    final url = Uri.parse('https://overpass-api.de/api/interpreter');
+    final response = await http.post(url, body: {'data': query});
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return parseStationsFromOverpass(data);
+    } else {
+      throw Exception('Failed to fetch station data');
+    }
+  }
+
+
+
+  List<Station> parseStationsFromOverpass(dynamic json) {
+    final List<Station> stations = [];
+
+    for (var element in json['elements']) {
+      if (element['type'] == 'node' && element.containsKey('tags')) {
+        final tags = element['tags'];
+        final name = tags['name'] ?? 'Unknown Station';
+
+        stations.add(Station(
+          type: 'station',
+          id: element['id'].toString(),
+          name: name,
+          latitude: element['lat'].toDouble(),
+          longitude: element['lon'].toDouble(),
+          nationalExpress: tags['national_express'] == 'yes',
+          national: tags['national'] == 'yes',
+          regional: tags['regional'] == 'yes',
+          regionalExpress: tags['regional_express'] == 'yes',
+          suburban: tags['suburban'] == 'yes' || tags['transport_type'] == 'subway',
+          bus: tags['bus'] == 'yes',
+          ferry: tags['ferry'] == 'yes',
+          subway: tags['subway'] == 'yes' || tags['transport_type'] == 'subway',
+          tram: tags['tram'] == 'yes' || tags['transport_type'] == 'tram',
+          taxi: tags['taxi'] == 'yes',
+        ));
+      }
+    }
+
+    print("✅ Parsed ${stations.length} stations");
+    return stations;
   }
 }

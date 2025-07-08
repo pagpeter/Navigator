@@ -538,11 +538,17 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                     color: colorScheme.surfaceContainerHighest,
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0), // Reduced from 8.0
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8), // Reduced from 8.0
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.all(Radius.circular(16)),
                         color: colorScheme.surfaceContainerLowest,
+                        boxShadow: [BoxShadow(
+                      color: Theme.of(context).colorScheme.shadow.withAlpha(20),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 3),
+                    )]
                       ),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(
@@ -663,6 +669,12 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                       Radius.circular(16),
                                     ),
                                     color: colorScheme.primaryContainer,
+                                    boxShadow: [BoxShadow(
+                      color: Theme.of(context).colorScheme.shadow.withAlpha(20),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 3),
+                    )]
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.fromLTRB(

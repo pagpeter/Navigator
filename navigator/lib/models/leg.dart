@@ -1,3 +1,4 @@
+import 'package:navigator/models/remark.dart';
 import 'package:navigator/models/station.dart';
 
 class Leg {
@@ -23,6 +24,7 @@ class Leg {
   final int? distance;
   final String? lineName;
   final String? productName;
+  final List<Remark>? remarks;
 
 
   Leg({
@@ -45,6 +47,7 @@ class Leg {
     this.lineName,
     this.productName,
     this.polyline,
+    this.remarks,
   });
 
   factory Leg.fromJson(Map<String, dynamic> json) {
@@ -70,6 +73,10 @@ class Leg {
       }
     }
 
+    List<Remark>? remarks = (json['remarks'] as List<dynamic>?)
+    ?.map((item) => Remark.fromJson(item as Map<String, dynamic>))
+    .toList();
+
     return Leg(
       tripID: safeGetString(json['tripId']),
       direction: safeGetString(json['direction']),
@@ -90,6 +97,7 @@ class Leg {
       lineName: safeGetNestedString(json['line'], 'name'),
       productName: safeGetNestedString(json['line'], 'productName'),
       polyline: json['polyline'], // Optional, can be null
+      remarks: remarks,
     );
   }
 

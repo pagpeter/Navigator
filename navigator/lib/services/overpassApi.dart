@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:navigator/models/station.dart';
 import 'package:navigator/models/subway_line.dart';
 
 class Overpassapi {
@@ -264,4 +265,7 @@ class Overpassapi {
       return Colors.blue;
     }
   }
+
+  //Color getLineColor(String lineColor, Station station)
+  
 }

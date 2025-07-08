@@ -9,11 +9,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:navigator/models/journey.dart';
 import 'package:navigator/models/leg.dart';
 import 'package:navigator/models/location.dart';
+import 'package:navigator/models/remark.dart';
 import 'package:navigator/pages/page_models/journey_page.dart';
 import 'dart:convert';
 import 'package:navigator/models/station.dart';
 
-import '../../services/overpassApi.dart';
+import 'package:navigator/services/overpassApi.dart';
+import 'package:navigator/services/overpassApi.dart' as overpassApi;
 
 class JourneyPageAndroid extends StatefulWidget {
   final JourneyPage page;
@@ -606,6 +608,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                               Text(
                                 departingLeg.origin.name,
                                 style: textTheme.headlineMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               if (departingLeg.departureDateTime
                                       .difference(arrivingLeg.arrivalDateTime)
@@ -653,6 +657,60 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               spacing: 16,
                               children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(16),
+                                    ),
+                                    color: colorScheme.primaryContainer,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      4,
+                                      16,
+                                      4,
+                                    ), // Reduced from 16
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Departure ' +
+                                              departingLeg
+                                                  .effectiveDepartureFormatted,
+                                          style: textTheme.titleMedium!
+                                              .copyWith(
+                                                color: departureTimeColor,
+                                              ),
+                                        ),
+                                        if (departingLeg.departurePlatform ==
+                                            null)
+                                          Text(
+                                            'at the Station',
+                                            style: textTheme.bodyMedium!
+                                                .copyWith(
+                                                  color: colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
+                                          ),
+                                        if (departingLeg.departurePlatform !=
+                                            null)
+                                          Text(
+                                            'Platform ' +
+                                                departingLeg
+                                                    .effectiveDeparturePlatform,
+                                            style: textTheme.bodyMedium!
+                                                .copyWith(
+                                                  color: departurePlatformColor,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 if (departingLeg.lineName != null &&
                                     departingLeg.direction != null)
                                   DottedBorder(
@@ -708,60 +766,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                       ),
                                     ),
                                   ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(16),
-                                    ),
-                                    color: colorScheme.primaryContainer,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      4,
-                                      16,
-                                      4,
-                                    ), // Reduced from 16
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Departure ' +
-                                              departingLeg
-                                                  .effectiveDepartureFormatted,
-                                          style: textTheme.titleMedium!
-                                              .copyWith(
-                                                color: departureTimeColor,
-                                              ),
-                                        ),
-                                        if (departingLeg.departurePlatform ==
-                                            null)
-                                          Text(
-                                            'at the Station',
-                                            style: textTheme.bodyMedium!
-                                                .copyWith(
-                                                  color: colorScheme
-                                                      .onPrimaryContainer,
-                                                ),
-                                          ),
-                                        if (departingLeg.departurePlatform !=
-                                            null)
-                                          Text(
-                                            'Platform ' +
-                                                departingLeg
-                                                    .effectiveDeparturePlatform,
-                                            style: textTheme.bodyMedium!
-                                                .copyWith(
-                                                  color: departurePlatformColor,
-                                                ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                
                               ],
                             ),
                           ),
@@ -1770,18 +1775,47 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
 class LegWidget extends StatefulWidget{
   final Leg leg;
-  final Color lineColor;
-  const LegWidget({Key? key, required this.leg, required this.lineColor}) : super(key: key);
+  Color lineColor;
+  Color? onLineColor;
+  
+  LegWidget({Key? key, required this.leg, required this.lineColor}) : super(key: key);
   @override
   State<LegWidget> createState() => _LegWidgetState();
 }
 
+
 class _LegWidgetState extends State<LegWidget> {
   bool _isExpanded = false;
+  Remark? comfortCheckinRemark; 
+  Remark? bicycleRemark;
+
+  @override
+  void initState() 
+  {
+    super.initState();
+    try{
+    comfortCheckinRemark = widget.leg.remarks!.firstWhere((remark) => remark.summary == 'Komfort-Checkin available');
+    } catch (e) {
+      comfortCheckinRemark = null;
+    }
+    try{
+    bicycleRemark = widget.leg.remarks!.firstWhere((remark) => remark.summary == 'bicycles conveyed');
+    } catch (e) {
+      bicycleRemark = null;
+    }
+    final brightness = ThemeData.estimateBrightnessForColor(widget.lineColor);
+    widget.onLineColor = brightness == Brightness.light 
+      ? Colors.black 
+      : Colors.white;
+
+    
+  }
+  
 
   @override
   Widget build(BuildContext context) 
   {
+    
     //if (widget.leg.distance == null || widget.leg.distance == 0) {
       //return const SizedBox.shrink();
     //}
@@ -1802,27 +1836,62 @@ class _LegWidgetState extends State<LegWidget> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Row(children: [
+                  child: Row(
+                    children: [
                     SizedBox(width: (constraints.maxWidth / 100)* 12,),
-                    Column(children: [
-                      //Line Chip
-                      if(widget.leg.lineName != null && widget.leg.lineName!.isNotEmpty)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: widget.lineColor,
-                          borderRadius: BorderRadius.circular(12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 8,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                        //Line Chip
+                        if(widget.leg.lineName != null && widget.leg.lineName!.isNotEmpty)
+                        Row(
+                          spacing: 8,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: widget.lineColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8), 
+                              child: Text(widget.leg.lineName!))
+                              ,),
+                              Expanded(child: Text(widget.leg.direction ?? '', style: Theme.of(context).textTheme.bodyMedium))
+                          ],
                         ),
-                        child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8), 
-                        child: Text(widget.leg.lineName!))
-                        ,),
-                      //Features
-                      
-                      //Further Information
-                      //Stops Button
-                      //Stops based on is Expanded
-                      
-                    ],),
-                    Spacer(),
+                        //Features
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.start,
+                          alignment: WrapAlignment.start,
+                          children: [
+                            if(comfortCheckinRemark != null)
+                            remark(context, comfortCheckinRemark!),
+                            if(bicycleRemark != null) 
+                            remark(context, bicycleRemark!),
+                          
+                        ],),
+                        
+                        //Further Information
+                        FilledButton.tonalIcon(
+                          onPressed: () => {}, 
+                          label: Text('Further Information'),
+                          icon: Icon(Icons.chevron_right),
+                          iconAlignment: IconAlignment.end,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(widget.lineColor),
+                            foregroundColor: WidgetStateProperty.all(widget.onLineColor),
+                          )
+                        )
+                        //Stops Button
+                        //Stops based on is Expanded
+                        
+                      ],),
+                    ),
+                    //Spacer(),
                     IconButton.filled(
                       onPressed: () => {},
                       icon: Icon(Icons.map),
@@ -1847,4 +1916,52 @@ class _LegWidgetState extends State<LegWidget> {
       }
     );
   }
+
+
+  Widget remark(BuildContext context, Remark remark)
+  {
+    Icon icon = Icon(Icons.power_off);
+    switch (remark.summary) 
+    {
+      case 'Komfort-Checkin available':
+      icon = Icon(Icons.check_circle_outline, size: 12);
+      break;
+      case 'bicycles conveyed':
+      icon = Icon(Icons.pedal_bike_outlined, size: 12);
+      break;
+    }
+
+    if (remark.summary == null || remark.summary!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return IntrinsicWidth(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        child: InkWell(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      onTap: () {
+        // Your onTap action here
+        print('Tapped on remark: ${remark.summary}');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: Row(children: [
+            icon,
+            SizedBox(width: 4),
+            Text(remark.summary!, style: Theme.of(context).textTheme.labelSmall,),
+          ],)
+        ),
+      ),
+        ),
+      ),
+    );
+  }
+
 }

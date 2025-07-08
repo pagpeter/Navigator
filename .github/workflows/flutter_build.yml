@@ -2,7 +2,7 @@ name: Flutter Build
 
 on:
   push:
-    branches: [ main ]  # Trigger on pushes to main branch
+    
   pull_request:
     branches: [ main ]
 

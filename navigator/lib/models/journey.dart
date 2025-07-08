@@ -12,12 +12,17 @@ class Journey {
   });
 
   factory Journey.fromJson(Map<String, dynamic> json) {
-    return Journey(
-      legs: (json['legs'] as List)
-          .map((legJson) => Leg.fromJson(legJson))
-          .toList(),
-      refreshToken: json['refreshToken'] ?? '', // Extract it safely
-    );
+    Journey j = Journey(legs: (json['legs'] as List)
+        .map((legJson) => Leg.fromJson(legJson))
+        .toList(),
+        refreshToken: json['refreshToken'] ?? '');
+
+    for (var leg in j.legs)
+    {
+      leg.initializeLineColor();
+    }
+    return j; // Extract it safely
+    
   }
 
   static Journey parseSingleJourneyResponse(Map<String, dynamic> json) {

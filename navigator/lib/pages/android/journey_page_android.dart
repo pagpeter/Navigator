@@ -430,7 +430,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           );
         } else {
           journeyComponents.add(
-            LegWidget(leg: leg, lineColor: Colors.blue,),
+            LegWidget(leg: leg, lineColor: leg.lineColor ?? Colors.grey),
           );
         }
       }
@@ -725,56 +725,55 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
                                 ),
                                 if (departingLeg.lineName != null &&
                                     departingLeg.direction != null)
-                                  DottedBorder(
-                                    options: RoundedRectDottedBorderOptions(
-                                      radius: Radius.circular(16),
-                                    ),
-                                    child: Container(
-                                      alignment: Alignment.centerLeft,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(24),
-                                        ),
+                                  Container(
+                                    alignment: Alignment.centerLeft,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(16),
                                       ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(
-                                          8.0,
-                                        ), // Reduced from 8.0
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          spacing: 2,
-                                          children: [
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.all(
-                                                  Radius.circular(8),
-                                                ),
-                                                color: colorScheme
-                                                    .tertiaryContainer,
+                                      border: Border.all(
+                                        color: colorScheme.primary,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                        8.0,
+                                      ), // Reduced from 8.0
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        spacing: 2,
+                                        children: [
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.all(
+                                                Radius.circular(8),
                                               ),
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                      4,
-                                                      1,
-                                                      4,
-                                                      1,
-                                                    ),
-                                                child: Text(
-                                                  departingLeg.lineName!,
-                                                  style: textTheme.titleSmall,
-                                                ),
+                                              color: colorScheme
+                                                  .tertiaryContainer,
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                    4,
+                                                    1,
+                                                    4,
+                                                    1,
+                                                  ),
+                                              child: Text(
+                                                departingLeg.lineName!,
+                                                style: textTheme.titleSmall,
                                               ),
                                             ),
-                                            Text(
-                                              departingLeg.direction!,
-                                              style: textTheme.bodySmall,
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                          Text(
+                                            departingLeg.direction!,
+                                            style: textTheme.bodySmall,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

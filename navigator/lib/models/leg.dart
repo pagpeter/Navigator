@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:navigator/models/remark.dart';
 import 'package:navigator/models/station.dart';
+import 'package:navigator/services/overpassApi.dart';
 
 class Leg {
   final String? tripID;
@@ -25,6 +27,7 @@ class Leg {
   final String? lineName;
   final String? productName;
   final List<Remark>? remarks;
+  Color? lineColor;
 
 
   Leg({
@@ -48,6 +51,7 @@ class Leg {
     this.productName,
     this.polyline,
     this.remarks,
+    this.lineColor,
   });
 
   factory Leg.fromJson(Map<String, dynamic> json) {
@@ -76,6 +80,8 @@ class Leg {
     List<Remark>? remarks = (json['remarks'] as List<dynamic>?)
     ?.map((item) => Remark.fromJson(item as Map<String, dynamic>))
     .toList();
+
+    
 
     return Leg(
       tripID: safeGetString(json['tripId']),
@@ -125,6 +131,16 @@ class Leg {
       } : null,
       if (polyline != null) 'polyline': polyline,
     };
+  }
+
+  void initializeLineColor() async
+  {
+    if(lineName!= null && lineName!.isNotEmpty)
+    {
+      final Overpassapi overpassApi = Overpassapi();
+      lineColor = await overpassApi.getTransitLineColor(lat: origin.latitude, lon: origin.longitude,lineName:  lineName!, lineRef: tripID);
+      print('Line color for $lineName: $lineColor');
+    }
   }
 
   // Helper getters for effective times

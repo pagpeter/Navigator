@@ -11,7 +11,6 @@ class Station extends Location {
   final bool subway;
   final bool tram;
   final bool taxi;
-  final List<String> ril100Ids; // Added RIL100 IDs
 
   Station({
     required super.type,
@@ -29,7 +28,6 @@ class Station extends Location {
     required this.subway,
     required this.tram,
     required this.taxi,
-    required this.ril100Ids, // Added to constructor
   });
 
   factory Station.empty() {
@@ -49,29 +47,17 @@ class Station extends Location {
       subway: false,
       tram: false,
       taxi: false,
-      ril100Ids: [], // Empty list for empty station
     );
   }
 
   factory Station.fromJson(Map<String, dynamic> json) {
+
     final location = json['location'];
     final products = json['products'];
-    
-    // Parse RIL100 IDs - handle both direct array and nested station structure
-    List<String> parseRil100Ids(Map<String, dynamic> data) {
-      if (data['ril100Ids'] != null) {
-        return List<String>.from(data['ril100Ids']);
-      }
-      // Check if there's a nested station with ril100Ids
-      if (data['station']?['ril100Ids'] != null) {
-        return List<String>.from(data['station']['ril100Ids']);
-      }
-      return [];
-    }
 
     return Station(
       type: json['type'] ?? '',
-      id: json['id'] ?? location?['id'] ?? '',
+      id: json['id'] ?? location?['id'] ?? '',  // 👈 fallback if id is null
       name: json['name'] ?? '',
       latitude: location?['latitude'] ?? json['latitude'] ?? 0.0,
       longitude: location?['longitude'] ?? json['longitude'] ?? 0.0,
@@ -85,7 +71,6 @@ class Station extends Location {
       subway: products?['subway'] ?? false,
       tram: products?['tram'] ?? false,
       taxi: products?['taxi'] ?? false,
-      ril100Ids: parseRil100Ids(json), // Parse RIL100 IDs
     );
   }
 
@@ -110,7 +95,6 @@ class Station extends Location {
         'tram': tram,
         'taxi': taxi,
       },
-      'ril100Ids': ril100Ids, // Include RIL100 IDs in JSON output
     };
   }
 }

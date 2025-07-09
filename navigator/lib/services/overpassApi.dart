@@ -185,7 +185,10 @@ class Overpassapi {
           national: tags['national'] == 'yes',
           regional: tags['regional'] == 'yes',
           regionalExpress: tags['regional_express'] == 'yes',
-          suburban: tags['suburban'] == 'yes' || tags['transport_type'] == 'subway',
+          suburban: tags['suburban'] == 'yes' ||
+              tags['transport_type'] == 'subway' ||
+              tags['transport_type'] == 'light_rail' ||
+              (tags['railway'] == 'station' && tags['station'] == 'light_rail'),
           bus: tags['bus'] == 'yes',
           ferry: tags['ferry'] == 'yes',
           subway: tags['subway'] == 'yes' || tags['transport_type'] == 'subway',

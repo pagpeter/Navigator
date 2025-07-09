@@ -476,7 +476,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
             onTap:() {
               Navigator.push(context,
               MaterialPageRoute(
-                builder: (context) => JourneyPageAndroid(JourneyPage(journey: r)),
+                builder: (context) => JourneyPageAndroid(JourneyPage(journey: r), journey: r,),
               ));
             },
             child: Padding(

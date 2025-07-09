@@ -227,6 +227,24 @@ class _HomePageAndroidState extends State<HomePageAndroid>
     }
   }
 
+  String _getLabelCollisionKey(Station station, double zoom) {
+    // Adjust the grid size based on zoom level
+    double gridSize = 100; // pixels
+
+    if (zoom > 16.5) {
+      gridSize = 150;
+    } else if (zoom > 15.5) {
+      gridSize = 120;
+    }
+
+    // Convert lat/lng to a rough grid position
+    // This is a simplification that works for collision detection
+    final gridX = (station.latitude * 1000 / gridSize).round();
+    final gridY = (station.longitude * 1000 / gridSize).round();
+
+    return "$gridX:$gridY";
+  }
+
   void animatedMapMove(LatLng destLocation, double destZoom) {
     final latTween = Tween<double>(
       begin: _currentCenter.latitude,
@@ -478,6 +496,37 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                           return map;
                         })
                             .values
+                        // Apply collision detection for labels when zoomed in, but not at extreme zoom
+                            .fold<Map<String, List<Station>>>({}, (collisionMap, station) {
+                          if (_currentZoom > 16.5) {
+                            // At very high zoom levels, bypass collision detection completely
+                            // Each station gets its own unique key to ensure all are shown
+                            final uniqueKey = "${station.name}_${station.latitude}_${station.longitude}";
+                            collisionMap[uniqueKey] = [station];
+                          } else {
+                            // Normal collision detection at moderate zoom levels
+                            final key = _getLabelCollisionKey(station, _currentZoom);
+                            if (!collisionMap.containsKey(key)) {
+                              collisionMap[key] = [];
+                            }
+                            collisionMap[key]!.add(station);
+                          }
+                          return collisionMap;
+                        })
+                            .entries
+                            .expand((entry) {
+                          final stations = entry.value;
+                          // If multiple stations share the same collision key, only keep one instance of each name
+                          // but only apply this logic at lower zoom levels
+                          if (stations.length > 1 && _currentZoom <= 17) {
+                            final uniqueByName = <String, Station>{};
+                            for (final station in stations) {
+                              uniqueByName[station.name] = station;
+                            }
+                            return uniqueByName.values;
+                          }
+                          return stations;
+                        })
                             .map((station) {
                           return Marker(
                             point: LatLng(station.latitude, station.longitude),

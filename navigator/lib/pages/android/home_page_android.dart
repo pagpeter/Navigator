@@ -299,7 +299,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
         return true; // allow actual back navigation if no results
       },
       child: Scaffold(
-        backgroundColor: colors.surfaceContainerHighest,
+        backgroundColor: colors.surfaceContainerLowest,
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           transitionBuilder: (child, anim)
@@ -422,7 +422,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-              // Remove the spacing property
+              spacing: 16,
               children: [
                 Expanded(
                   child: TextField(
@@ -445,7 +445,6 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     ),
                   ),
                 ),
-          const SizedBox(width: 16),
                 IconButton.filledTonal(
   onPressed: () {
     showModalBottomSheet(
@@ -457,7 +456,7 @@ class _HomePageAndroidState extends State<HomePageAndroid>
             return Container(
               height: MediaQuery.of(context).size.height * 0.4, // 40% of screen
               decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: SafeArea(
@@ -605,8 +604,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
 
     return Card(
       clipBehavior: Clip.hardEdge,
-      color: colors.surfaceContainerHighest,
-      elevation: 1,
+      color: colors.surfaceContainer,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
@@ -728,8 +727,8 @@ class _HomePageAndroidState extends State<HomePageAndroid>
 
     return Card(
       clipBehavior: Clip.hardEdge,
-      color: colors.surfaceContainerHighest,
-      elevation: 1,
+      color: colors.surfaceContainer,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {

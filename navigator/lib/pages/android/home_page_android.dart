@@ -453,7 +453,32 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                     PolylineLayer(polylines: _funicularLines),
                     if (showStationLabels && _currentZoom > 14) // Only show labels when zoomed in enough
                       MarkerLayer(
-                        markers: _stations.map((station) {
+                        markers: _stations
+                            .where((station) {
+                          // Filter stations based on zoom level and type
+                          if (_currentZoom < 11.5) return false; // Don't show any stations when zoomed far out
+
+                          // At medium zoom (11.5-14), only show important stations
+                          if (_currentZoom < 14) {
+                            return station.subway || station.national ||
+                                station.nationalExpress || station.suburban;
+                          }
+
+                          // At higher zoom levels, show all stations
+                          return true;
+                        })
+                        // Group by name and take only the first station of each name when zoomed out
+                            .fold<Map<String, Station>>({}, (map, station) {
+                          if (_currentZoom <= 15.5 && !map.containsKey(station.name)) {
+                            map[station.name] = station;
+                          } else if (_currentZoom > 15.5) {
+                            // When zoomed in, show all stations individually
+                            map["${station.name}_${station.latitude}_${station.longitude}"] = station;
+                          }
+                          return map;
+                        })
+                            .values
+                            .map((station) {
                           return Marker(
                             point: LatLng(station.latitude, station.longitude),
                             width: 150,
@@ -461,33 +486,37 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: colors.surfaceContainer,
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    station.name,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: colors.onSurfaceVariant,
+                                // Only show the label text when zoomed in close enough
+                                if (_currentZoom > 15.5)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: colors.surfaceContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
+                                    child: Text(
+                                      station.name,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: colors.onSurfaceVariant,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
+                                if (_currentZoom > 14.5)
+                                  const SizedBox(height: 2),
                                 Container(
                                   decoration: BoxDecoration(
+                                    // Scale marker size based on zoom level
                                     color: colors.primary,
                                     shape: BoxShape.circle,
                                     boxShadow: [
@@ -498,11 +527,11 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                                       ),
                                     ],
                                   ),
-                                  padding: const EdgeInsets.all(4),
+                                  padding: EdgeInsets.all(_currentZoom > 14 ? 4 : 3),
                                   child: Icon(
                                     _getTransportIcon(station),
                                     color: colors.onPrimary,
-                                    size: 14,
+                                    size: _currentZoom > 14 ? 14 : 12,
                                   ),
                                 ),
                               ],

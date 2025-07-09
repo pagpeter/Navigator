@@ -2,59 +2,85 @@ import 'package:navigator/models/leg.dart';
 
 class Journey {
   final List<Leg> legs;
+  final String refreshToken;
 
-  Journey({required this.legs});
+
+  Journey({
+    required this.legs,
+    required this.refreshToken,
+
+  });
 
   factory Journey.fromJson(Map<String, dynamic> json) {
-    return Journey(
-      legs: (json['legs'] as List)
-          .map((legJson) => Leg.fromJson(legJson))
-          .toList(),
-    );
+    Journey j = Journey(legs: (json['legs'] as List)
+        .map((legJson) => Leg.fromJson(legJson))
+        .toList(),
+        refreshToken: json['refreshToken'] ?? '');
+    return j; // Extract it safely
+    
+  }
+
+  void initializeLineColors()
+  {
+    for (var leg in legs)
+    {
+      leg.initializeLineColor();
+    }
+  }
+
+  static Journey parseSingleJourneyResponse(Map<String, dynamic> json) {
+    if (!json.containsKey('legs')) {
+      throw FormatException('Missing legs in single journey response');
+    }
+    return Journey.fromJson(json);
   }
 
   Map<String, dynamic> toJson() {
     return {
       'legs': legs.map((leg) => leg.toJson()).toList(),
+      'refreshToken': refreshToken,
     };
   }
 
-  // Static method to parse and sort journeys from JSON response
   static List<Journey> parseAndSort(List<dynamic> jsonJourneys) {
-    // Parse all journeys from JSON
     List<Journey> journeys = jsonJourneys
-        .map((json) => Journey.fromJson(json))
+        .map((json) {
+      final journey = Journey.fromJson(json);
+      print('Parsed Journey with refreshToken: ${journey.refreshToken}');
+      return journey;
+    })
         .toList();
 
-    // Sort by the actual departure time of the first leg
-    // This accounts for delays and shows real chronological order
     journeys.sort((a, b) {
       DateTime departureA = a.legs.first.departureDateTime;
       DateTime departureB = b.legs.first.departureDateTime;
-
       return departureA.compareTo(departureB);
     });
 
     return journeys;
   }
 
-  // Alternative sorting by planned departure time (if you need original schedule order)
   static List<Journey> parseAndSortByPlanned(List<dynamic> jsonJourneys) {
     List<Journey> journeys = jsonJourneys
-        .map((json) => Journey.fromJson(json))
+        .map((json) {
+      final journey = Journey.fromJson(json);
+      print('Parsed Journey with refreshToken: ${journey.refreshToken}');
+      return journey;
+    })
         .toList();
 
+    // Sort by actual arrival time of the last leg
     journeys.sort((a, b) {
-      DateTime plannedDepartureA = a.legs.first.plannedDepartureDateTime;
-      DateTime plannedDepartureB = b.legs.first.plannedDepartureDateTime;
-
-      return plannedDepartureA.compareTo(plannedDepartureB);
+      DateTime arrivalA = a.legs.last.arrivalDateTime;
+      DateTime arrivalB = b.legs.last.arrivalDateTime;
+      return arrivalA.compareTo(arrivalB);
     });
 
     return journeys;
   }
 
-  // Helper getters for convenience
+
+
   DateTime get departureTime => legs.first.departureDateTime;
   DateTime get arrivalTime => legs.last.arrivalDateTime;
   DateTime get plannedDepartureTime => legs.first.plannedDepartureDateTime;

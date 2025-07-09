@@ -4,5 +4,9 @@ class JourneyPage
 {
   Journey journey;
 
-  JourneyPage({required this.journey});
+  JourneyPage({required this.journey})
+  {
+    // Initialize line colors for all legs in the journey
+    journey.initializeLineColors();
+  }
 }

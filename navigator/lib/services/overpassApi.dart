@@ -239,7 +239,7 @@ out body;
           ferry: isFerry,
           subway: isSubway,
           tram: isTram,
-          taxi: tags['taxi'] == 'yes',
+          taxi: tags['taxi'] == 'yes', ril100Ids: [],
         ));
       }
     }

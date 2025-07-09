@@ -16,13 +16,16 @@ class Journey {
         .map((legJson) => Leg.fromJson(legJson))
         .toList(),
         refreshToken: json['refreshToken'] ?? '');
+    return j; // Extract it safely
+    
+  }
 
-    for (var leg in j.legs)
+  void initializeLineColors()
+  {
+    for (var leg in legs)
     {
       leg.initializeLineColor();
     }
-    return j; // Extract it safely
-    
   }
 
   static Journey parseSingleJourneyResponse(Map<String, dynamic> json) {

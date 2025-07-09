@@ -390,6 +390,23 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           }
         }
 
+        if (!shouldShowInterchange &&
+            leg.isWalking == true &&
+            leg.origin.ril100Ids.isNotEmpty &&
+            (leg.destination.ril100Ids.isEmpty ||
+             !_haveSameRil100Station(leg.origin.ril100Ids, leg.destination.ril100Ids))) {
+          shouldShowInterchange = true;
+          showInterchangeTime = false;
+
+          // Check for platform changes between previousLeg and walking leg
+          if (previousLeg.arrivalPlatformEffective.isNotEmpty &&
+              leg.departurePlatformEffective.isNotEmpty &&
+              previousLeg.arrivalPlatformEffective != leg.departurePlatformEffective) {
+            platformChangeText =
+                'Platform change: ${previousLeg.arrivalPlatformEffective} to ${leg.departurePlatformEffective}';
+          }
+        }
+
         // Only add interchange component if it should be shown
         if (shouldShowInterchange) {
           Widget interchangeWidget = _buildInterchangeComponent(
@@ -430,7 +447,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
           );
         } else {
           journeyComponents.add(
-            LegWidget(leg: leg, lineColor: leg.lineColor ?? Colors.grey),
+            LegWidget(leg: leg, colorArg: leg.lineColorNotifier.value ?? Colors.grey),
           );
         }
       }
@@ -1704,25 +1721,34 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
               leg.lineName != null &&
               leg.lineName!.isNotEmpty &&
               legPoints.isNotEmpty) {
-            LatLng centerPoint = legPoints[legPoints.length ~/ 2];
-            final overpass = Overpassapi();
 
-            // Start the async call but don't block polyline creation
-            overpass
-                .getTransitLineColor(
-                  lat: centerPoint.latitude,
-                  lon: centerPoint.longitude,
-                  lineName: leg.lineName!,
-                  mode: leg.productName,
-                )
-                .then((color) {
-                  if (mounted && color != null) {
+                leg.lineColorNotifier.addListener((){
+                  if (mounted) {
                     setState(() {
-                      _transitLineColorCache[cacheKey] = color as Color;
-                      // The setState will trigger rebuild with the new colors
+                      _transitLineColorCache[cacheKey] = leg.lineColorNotifier.value as Color;
                     });
                   }
                 });
+
+            // LatLng centerPoint = legPoints[legPoints.length ~/ 2];
+            // final overpass = Overpassapi();
+
+            // Start the async call but don't block polyline creation
+            // overpass
+            //     .getTransitLineColor(
+            //       lat: centerPoint.latitude,
+            //       lon: centerPoint.longitude,
+            //       lineName: leg.lineName!,
+            //       mode: leg.productName,
+            //     )
+            //     .then((color) {
+            //       if (mounted && color != null) {
+            //         setState(() {
+            //           _transitLineColorCache[cacheKey] = color as Color;
+            //           // The setState will trigger rebuild with the new colors
+            //         });
+            //       }
+            //     });
           }
         }
 
@@ -1786,10 +1812,9 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
 
 class LegWidget extends StatefulWidget{
   final Leg leg;
-  Color lineColor;
-  Color? onLineColor;
+  Color colorArg;
   
-  LegWidget({Key? key, required this.leg, required this.lineColor}) : super(key: key);
+  LegWidget({Key? key, required this.leg, required this.colorArg}) : super(key: key);
   @override
   State<LegWidget> createState() => _LegWidgetState();
 }
@@ -1799,11 +1824,16 @@ class _LegWidgetState extends State<LegWidget> {
   bool _isExpanded = false;
   Remark? comfortCheckinRemark; 
   Remark? bicycleRemark;
+  late VoidCallback _colorListener;
+  Color lineColor = Colors.grey;
+  Color onLineColor = Colors.black;
+  
 
   @override
   void initState() 
   {
     super.initState();
+    lineColor = widget.colorArg;
     try{
     comfortCheckinRemark = widget.leg.remarks!.firstWhere((remark) => remark.summary == 'Komfort-Checkin available');
     } catch (e) {
@@ -1814,12 +1844,30 @@ class _LegWidgetState extends State<LegWidget> {
     } catch (e) {
       bicycleRemark = null;
     }
-    final brightness = ThemeData.estimateBrightnessForColor(widget.lineColor);
-    widget.onLineColor = brightness == Brightness.light 
+    final brightness = ThemeData.estimateBrightnessForColor(lineColor);
+    onLineColor = brightness == Brightness.light 
       ? Colors.black 
       : Colors.white;
 
+    _colorListener = () {
+      if (mounted) {
+        setState(() {
+          lineColor = widget.leg.lineColorNotifier.value ?? Colors.grey;
+          final brightness = ThemeData.estimateBrightnessForColor(lineColor);
+          onLineColor = brightness == Brightness.light
+              ? Colors.black
+              : Colors.white;
+        });
+      }
+    };
+    widget.leg.lineColorNotifier.addListener(_colorListener);
     
+  }
+
+   @override
+  void dispose() {
+    widget.leg.lineColorNotifier.removeListener(_colorListener);
+    super.dispose();
   }
   
 
@@ -1830,6 +1878,7 @@ class _LegWidgetState extends State<LegWidget> {
     //if (widget.leg.distance == null || widget.leg.distance == 0) {
       //return const SizedBox.shrink();
     //}
+
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints)
       {
@@ -1842,7 +1891,7 @@ class _LegWidgetState extends State<LegWidget> {
                 curve: Curves.easeInOut,
                 margin: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  color: widget.lineColor.withAlpha(100),
+                  color: lineColor.withAlpha(100),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Padding(
@@ -1863,13 +1912,13 @@ class _LegWidgetState extends State<LegWidget> {
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                color: widget.lineColor,
+                                color: lineColor,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 4, horizontal: 8), 
-                              child: Text(widget.leg.lineName!))
+                              child: Text(widget.leg.lineName!, style: TextStyle(color: onLineColor)))
                               ,),
-                              Expanded(child: Text(widget.leg.direction ?? '', style: Theme.of(context).textTheme.bodyMedium))
+                              Expanded(child: Text(widget.leg.direction ?? '', style: Theme.of(context).textTheme.bodyMedium)),
                           ],
                         ),
                         //Features
@@ -1893,11 +1942,23 @@ class _LegWidgetState extends State<LegWidget> {
                           icon: Icon(Icons.chevron_right),
                           iconAlignment: IconAlignment.end,
                           style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(widget.lineColor),
-                            foregroundColor: WidgetStateProperty.all(widget.onLineColor),
+                            backgroundColor: WidgetStateProperty.all(lineColor),
+                            foregroundColor: WidgetStateProperty.all(onLineColor),
+                          )
+                        ),
+                        //Stops Button
+
+                        FilledButton.tonalIcon(
+                          onPressed: () => {}, 
+                          label: Text('Stops'),
+                          icon: Icon(Icons.arrow_drop_down),
+                          iconAlignment: IconAlignment.end,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(lineColor),
+                            foregroundColor: WidgetStateProperty.all(onLineColor),
                           )
                         )
-                        //Stops Button
+
                         //Stops based on is Expanded
                         
                       ],),
@@ -1918,7 +1979,7 @@ class _LegWidgetState extends State<LegWidget> {
                 child: Container(
                   height: constraints.maxHeight,
                   decoration: BoxDecoration(
-                    color: widget.lineColor,
+                    color: lineColor,
                     borderRadius: BorderRadius.all(Radius.circular(24)),
                 ),),)
             ],

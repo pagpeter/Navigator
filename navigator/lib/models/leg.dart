@@ -27,8 +27,7 @@ class Leg {
   final String? lineName;
   final String? productName;
   final List<Remark>? remarks;
-  Color? lineColor;
-
+  final ValueNotifier<Color?> lineColorNotifier = ValueNotifier<Color?>(null);
 
   Leg({
     this.tripID,
@@ -51,7 +50,6 @@ class Leg {
     this.productName,
     this.polyline,
     this.remarks,
-    this.lineColor,
   });
 
   factory Leg.fromJson(Map<String, dynamic> json) {
@@ -138,8 +136,9 @@ class Leg {
     if(lineName!= null && lineName!.isNotEmpty)
     {
       final Overpassapi overpassApi = Overpassapi();
-      lineColor = await overpassApi.getTransitLineColor(lat: origin.latitude, lon: origin.longitude,lineName:  lineName!, lineRef: tripID);
-      print('Line color for $lineName: $lineColor');
+      lineColorNotifier.value = await overpassApi.getTransitLineColor(lat: origin.latitude, lon: origin.longitude,lineName:  lineName!, lineRef: tripID);
+      final color = lineColorNotifier.value;
+      print('Line color for $lineName: $color');
     }
   }
 

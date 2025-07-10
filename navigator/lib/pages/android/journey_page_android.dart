@@ -168,6 +168,8 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -488,6 +490,111 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
     }
 
     return false;
+  }
+
+  List<Marker> _buildStationMarkers(BuildContext context) {
+    final journey = widget.page.journey;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    // Set to keep track of unique stations (by coordinates)
+    final Set<String> addedStations = {};
+    final List<Marker> markers = [];
+
+    // For each leg, add origin and destination stations
+    for (final leg in journey.legs) {
+      // Only add transit legs (skip walking legs)
+      if (leg.isWalking != true && leg.lineName != null) {
+        // Add origin station if not already added
+        final originKey = '${leg.origin.latitude},${leg.origin.longitude}';
+        if (!addedStations.contains(originKey)) {
+          addedStations.add(originKey);
+          markers.add(_createStationMarker(leg.origin, colors, leg.lineColorNotifier.value));
+        }
+
+        // Add destination station if not already added
+        final destinationKey = '${leg.destination.latitude},${leg.destination.longitude}';
+        if (!addedStations.contains(destinationKey)) {
+          addedStations.add(destinationKey);
+          markers.add(_createStationMarker(leg.destination, colors, leg.lineColorNotifier.value));
+        }
+      }
+    }
+
+    return markers;
+  }
+
+  Marker _createStationMarker(Station station, ColorScheme colors, Color? lineColor) {
+    // Choose appropriate icon based on station type
+    IconData iconData = Icons.location_on;
+    if (station.subway) {
+      iconData = Icons.subway;
+    } else if (station.tram) {
+      iconData = Icons.tram;
+    } else if (station.suburban) {
+      iconData = Icons.directions_subway;
+    } else if (station.ferry) {
+      iconData = Icons.directions_ferry;
+    } else if (station.national || station.nationalExpress) {
+      iconData = Icons.train;
+    } else if (station.bus) {
+      iconData = Icons.directions_bus;
+    }
+
+    return Marker(
+      point: LatLng(station.latitude, station.longitude),
+      width: 150,
+      height: 70,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainer,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              station.name,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: colors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Container(
+            decoration: BoxDecoration(
+              color: lineColor ?? colors.primary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: (lineColor ?? colors.primary).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Icon(
+              iconData,
+              color: colors.onPrimary,
+              size: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildInterchangeComponent(
@@ -1521,6 +1628,7 @@ class _JourneyPageAndroidState extends State<JourneyPageAndroid>
             ),
             // Add the polyline layer with route path
             _buildPolylineLayer(),
+            MarkerLayer(markers: _buildStationMarkers(context)),
             CurrentLocationLayer(
               alignPositionStream: _alignPositionStreamController.stream,
               alignPositionOnUpdate: _alignPositionOnUpdate,

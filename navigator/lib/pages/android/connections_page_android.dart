@@ -220,6 +220,9 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           child: Column(
             children: [
               //Input Fields
+
+              _buildInputFields(context),
+
               //Search related Buttons
               _buildButtons(context),
 
@@ -239,6 +242,57 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
           NavigationDestination(icon: Icon(Icons.bookmark), label: 'Saved'),
         ],
       ),
+    );
+  }
+
+  Widget _buildInputFields(BuildContext context)
+  {
+    return Container(
+      margin: EdgeInsets.all(8),
+      child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 16),
+        child: Stack(
+          children: [
+            // From input
+            TextField(
+              controller: _fromController,
+              focusNode: _fromFocusNode,
+              decoration: InputDecoration(
+                labelText: 'From',
+                prefixIcon: Icon(Icons.location_on),
+                border: OutlineInputBorder(),
+              ),
+              onTap: () {
+                setState(() {
+                  searching = true;
+                  searchingFrom = true;
+                });
+              },
+            ),
+
+            // To input
+            Positioned(
+              top: 60,
+              left: 0,
+              right: 0,
+              child: TextField(
+                controller: _toController,
+                focusNode: _toFocusNode,
+                decoration: InputDecoration(
+                  labelText: 'To',
+                  prefixIcon: Icon(Icons.location_on),
+                  border: OutlineInputBorder(),
+                ),
+                onTap: () {
+                  setState(() {
+                    searching = true;
+                    searchingFrom = false;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+        )
     );
   }
 

@@ -227,7 +227,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
               _buildButtons(context),
 
               //Results
-              if (searching) _buildSearchResults(context, searchingFrom),
+              if (searching) Expanded(child: _buildSearchResults(context, searchingFrom)),
 
               if (!searching) _buildJourneys(context),
 
@@ -248,49 +248,56 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
   Widget _buildInputFields(BuildContext context)
   {
     return Container(
-      margin: EdgeInsets.all(8),
-      child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+        border: Border.all(width: 2, color: Theme.of(context).colorScheme.primary),
+        color: Theme.of(context).colorScheme.primaryContainer
+      ),
+      child: Padding(padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 8),
         child: Stack(
           children: [
             // From input
-            TextField(
-              controller: _fromController,
-              focusNode: _fromFocusNode,
-              decoration: InputDecoration(
-                labelText: 'From',
-                prefixIcon: Icon(Icons.location_on),
-                border: OutlineInputBorder(),
-              ),
-              onTap: () {
-                setState(() {
-                  searching = true;
-                  searchingFrom = true;
-                });
-              },
-            ),
-
-            // To input
-            Positioned(
-              top: 60,
-              left: 0,
-              right: 0,
-              child: TextField(
-                controller: _toController,
-                focusNode: _toFocusNode,
-                decoration: InputDecoration(
-                  labelText: 'To',
-                  prefixIcon: Icon(Icons.location_on),
-                  border: OutlineInputBorder(),
+            Column(
+              spacing: 8,
+              children: [
+                TextField(
+                  controller: _fromController,
+                  focusNode: _fromFocusNode,
+                  decoration: InputDecoration(
+                    labelText: 'From',
+                    prefixIcon: Icon(Icons.location_on),
+                    border: OutlineInputBorder().copyWith(borderRadius: BorderRadius.all(Radius.circular(32))),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      searching = true;
+                      searchingFrom = true;
+                    });
+                  },
                 ),
-                onTap: () {
-                  setState(() {
-                    searching = true;
-                    searchingFrom = false;
-                  });
-                },
-              ),
+                TextField(
+                  controller: _toController,
+                  focusNode: _toFocusNode,
+                  decoration: InputDecoration(
+                    labelText: 'To',
+                    prefixIcon: Icon(Icons.location_on),
+                    border: OutlineInputBorder().copyWith(borderRadius: BorderRadius.all(Radius.circular(32))),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      searching = true;
+                      searchingFrom = false;
+                    });
+                  },
+                ),
+              ],
             ),
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: IconButton.filledTonal(onPressed: () => {}, icon: Icon(Icons.swap_vert))))
           ],
+        
         ),
         )
     );
@@ -470,7 +477,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
     if (searchingFrom) {
       if(_searchResultsFrom.isEmpty)
       {
-        return CircularProgressIndicator();
+        return Center(child: CircularProgressIndicator());
       }
       return ListView.builder(
         key: const ValueKey('list'),
@@ -1063,6 +1070,7 @@ class _ConnectionsPageAndroidState extends State<ConnectionsPageAndroid> {
                 // Debug prints
                 print('From: ${widget.page.from}');
                 print('To: ${widget.page.to}');
+                searching = false;
                 
                 await getJourneys(
                   widget.page.from.id,

@@ -476,6 +476,14 @@ class _HomePageAndroidState extends State<HomePageAndroid>
                           // Filter stations based on zoom level and type
                           if (_currentZoom < 11.5) return false; // Don't show any stations when zoomed far out
 
+                          // Filter by transportation type settings
+                          if ((station.subway && !showSubway) ||
+                              (station.suburban && !showLightRail) ||
+                              (station.tram && !showTram) ||
+                              (station.ferry && !showFerry)) {
+                            return false;
+                          }
+
                           // At medium zoom (11.5-14), only show important stations
                           if (_currentZoom < 14) {
                             return station.subway || station.national ||
